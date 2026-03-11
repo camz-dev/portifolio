@@ -69,7 +69,7 @@ const projetos = [
     titulo: "Cripto Analyzer",
     descricao: "Análise de criptomoedas em tempo real com gráficos interativos e acompanhamento de preços.",
     tecnologias: ["React", "API REST", "Chart.js"],
-    link: "#",
+    link: "https://crypto-analyzer-one-xi.vercel.app/",
     categoria: "frontend",
   },
   {
@@ -618,31 +618,40 @@ export default function Home() {
                     key = identificador único para o React (ajuda na performance)
                     delay: index * 0.1 = cada card anima com delay progressivo
                   */}
-                  <Card className="h-full hover:shadow-lg transition-shadow">
-                    {/*
-                      h-full = altura total disponível
-                      hover:shadow-lg = sombra maior ao passar o mouse
-                    */}
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        {projeto.titulo}
-                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                      </CardTitle>
-                      <CardDescription>
-                        {projeto.descricao}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Badges das tecnologias */}
-                      <div className="flex flex-wrap gap-2">
-                        {projeto.tecnologias.map((tech) => (
-                          <Badge key={tech} variant="outline">
-                            {tech}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <a 
+                    href={projeto.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer hover:border-primary/50">
+                      {/*
+                        h-full = altura total disponível
+                        hover:shadow-lg = sombra maior ao passar o mouse
+                        cursor-pointer = cursor de mãozinha
+                        hover:border-primary/50 = borda destaca ao hover
+                      */}
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          {projeto.titulo}
+                          <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                        </CardTitle>
+                        <CardDescription>
+                          {projeto.descricao}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Badges das tecnologias */}
+                        <div className="flex flex-wrap gap-2">
+                          {projeto.tecnologias.map((tech) => (
+                            <Badge key={tech} variant="outline">
+                              {tech}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </a>
                 </motion.div>
               ))}
             </div>
