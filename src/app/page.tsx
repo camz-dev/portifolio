@@ -66,6 +66,14 @@ import ParticleBackground from "@/components/particle-background"  // Partícula
 const projetos = [
   {
     id: 1,
+    titulo: "Cripto Analyzer",
+    descricao: "Análise de criptomoedas em tempo real com gráficos interativos e acompanhamento de preços.",
+    tecnologias: ["React", "API REST", "Chart.js"],
+    link: "#",
+    categoria: "frontend",
+  },
+  {
+    id: 2,
     titulo: "Portfolio Web",
     descricao: "Meu primeiro portfolio profissional com Next.js, TypeScript e Tailwind CSS.",
     tecnologias: ["Next.js", "TypeScript", "Tailwind CSS"],
@@ -73,7 +81,7 @@ const projetos = [
     categoria: "frontend",
   },
   {
-    id: 2,
+    id: 3,
     titulo: "Sistema de Tarefas",
     descricao: "Aplicativo para gerenciar tarefas diárias com CRUD completo.",
     tecnologias: ["React", "Node.js", "MongoDB"],
@@ -81,7 +89,7 @@ const projetos = [
     categoria: "fullstack",
   },
   {
-    id: 3,
+    id: 4,
     titulo: "Chatbot com IA",
     descricao: "Chatbot inteligente para atendimento automatizado.",
     tecnologias: ["Python", "OpenAI", "FastAPI"],
