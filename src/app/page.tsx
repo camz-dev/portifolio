@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +16,10 @@ import { motion } from "framer-motion"
 import ParticleBackground from "@/components/particle-background"
 import AdminPanel from "@/components/admin/AdminPanel"
 import { ThemeToggle } from "@/components/theme-toggle"
+
+// URL secreta para acessar o admin (mude para algo único)
+const ADMIN_SECRET_KEY = "camz-admin-x9k2m7p4q"
+const ADMIN_SECRET_PARAM = "admin_access"
 
 // Interfaces
 interface Projeto {
@@ -57,6 +61,10 @@ interface Perfil {
 
 export default function Home() {
   const [modoAdmin, setModoAdmin] = useState(false)
+  const [acessoAutorizado, setAcessoAutorizado] = useState(false)
+  const [senha, setSenha] = useState('')
+  const [erroSenha, setErroSenha] = useState('')
+  
   const [formulario, setFormulario] = useState({ nome: "", email: "", mensagem: "" })
   const [chatAberto, setChatAberto] = useState(false)
   const [mensagens, setMensagens] = useState([{ autor: "bot" as const, texto: "Olá! Como posso ajudar?" }])
@@ -69,12 +77,8 @@ export default function Home() {
   const [skills, setSkills] = useState<Skill[]>([])
   const [perfil, setPerfil] = useState<Perfil | null>(null)
 
-  // Sequência secreta para acessar o admin
-  const [secretSequence, setSecretSequence] = useState("")
-  const SECRET_CODE = "camzadmin"
-
   // Carregar dados do Supabase
-  const carregarDados = async () => {
+  const carregarDados = useCallback(async () => {
     try {
       const [projetosRes, skillsRes, perfilRes] = await Promise.all([
         fetch('/api/projetos'),
@@ -92,19 +96,51 @@ export default function Home() {
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
     }
-  }
-  
-  // Carregar dados ao montar o componente
+  }, [])
+
+  // Verificar URL secreta e token salvo
+  useEffect(() => {
+    // Verificar se a URL contém o parâmetro secreto
+    const params = new URLSearchParams(window.location.search)
+    const adminAccess = params.get(ADMIN_SECRET_PARAM)
+    
+    if (adminAccess === ADMIN_SECRET_KEY) {
+      setAcessoAutorizado(true)
+      
+      // Verificar se já tem token salvo
+      const token = localStorage.getItem('admin_token')
+      if (token) {
+        setModoAdmin(true)
+      }
+      
+      // Limpar a URL (remover o parâmetro secreto) por segurança
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+    }
+  }, [])
+
+  // Carregar dados ao montar
   useEffect(() => {
     carregarDados()
-  }, [])
-  
+  }, [carregarDados])
+
+  // Atualização automática a cada 30 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!modoAdmin) {
+        carregarDados()
+      }
+    }, 30000) // 30 segundos
+
+    return () => clearInterval(interval)
+  }, [modoAdmin, carregarDados])
+
   // Recarregar dados quando sair do modo admin
   useEffect(() => {
     if (!modoAdmin) {
       carregarDados()
     }
-  }, [modoAdmin])
+  }, [modoAdmin, carregarDados])
 
   // Efeito de digitação
   useEffect(() => {
@@ -121,55 +157,8 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [perfil?.nome])
 
-  // Verificar se está autenticado
-  useEffect(() => {
-    const token = localStorage.getItem('admin_token')
-    if (token) {
-      setModoAdmin(true)
-    }
-  }, [])
-
-  // Detectar sequência secreta de teclas
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl + Shift + A = atalho para admin
-      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-        const token = localStorage.getItem('admin_token')
-        if (token) {
-          setModoAdmin(true)
-        } else {
-          const senha = prompt('Digite a senha de administrador:')
-          if (senha) {
-            verificarSenha(senha)
-          }
-        }
-      }
-      
-      // Detectar digitação da palavra secreta
-      if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
-        setSecretSequence(prev => {
-          const newSeq = (prev + e.key.toLowerCase()).slice(-SECRET_CODE.length)
-          if (newSeq === SECRET_CODE) {
-            const token = localStorage.getItem('admin_token')
-            if (token) {
-              setModoAdmin(true)
-            } else {
-              const senha = prompt('Digite a senha de administrador:')
-              if (senha) {
-                verificarSenha(senha)
-              }
-            }
-          }
-          return newSeq
-        })
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
-  const verificarSenha = async (senha: string) => {
+  // Verificar senha do admin
+  const verificarSenha = async () => {
     try {
       const res = await fetch('/api/auth', {
         method: 'POST',
@@ -181,18 +170,58 @@ export default function Home() {
       if (data.success) {
         localStorage.setItem('admin_token', data.token)
         setModoAdmin(true)
+        setSenha('')
+        setErroSenha('')
       } else {
-        alert('Senha incorreta!')
+        setErroSenha('Senha incorreta!')
       }
     } catch {
-      alert('Erro ao autenticar')
+      setErroSenha('Erro ao autenticar')
     }
+  }
+
+  // Tela de login do admin (só aparece se tiver acesso autorizado via URL)
+  if (acessoAutorizado && !modoAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">🔐 Acesso Administrativo</CardTitle>
+            <CardDescription>
+              Digite sua senha para acessar o painel
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                type="password"
+                placeholder="Senha de administrador"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && verificarSenha()}
+              />
+              {erroSenha && <p className="text-sm text-destructive">{erroSenha}</p>}
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={verificarSenha} className="flex-1">
+                Entrar
+              </Button>
+              <Button variant="outline" onClick={() => setAcessoAutorizado(false)}>
+                Voltar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   // Se estiver no modo admin, mostrar o painel
   if (modoAdmin) {
     return <AdminPanel onLogout={() => {
       setModoAdmin(false)
+      setAcessoAutorizado(false)
+      localStorage.removeItem('admin_token')
       carregarDados()
     }} />
   }
@@ -220,7 +249,7 @@ export default function Home() {
     }
   }
 
-  const enviarFormulario = async (e: React.FormEvent) => {
+  const enviarFormulario = (e: React.FormEvent) => {
     e.preventDefault()
     alert(`Mensagem enviada! Obrigado ${formulario.nome}! Entrarei em contato em breve.`)
     setFormulario({ nome: "", email: "", mensagem: "" })
@@ -451,7 +480,6 @@ export default function Home() {
                 >
                   <a href={projeto.link} target="_blank" rel="noopener noreferrer" className="block group">
                     <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 hover:border-primary/50 hover:-translate-y-1">
-                      {/* Imagem do Projeto */}
                       <div className="relative h-48 overflow-hidden bg-muted">
                         <img
                           src={getImagemProjeto(projeto)}
@@ -600,7 +628,6 @@ export default function Home() {
               </CardContent>
             </Card>
             
-            {/* Info de Contato */}
             <div className="mt-8 space-y-4">
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
