@@ -100,9 +100,14 @@ const IMAGENS_PROJETOS = [
   { valor: '/projetos/portfolio-web.png', label: 'Portfolio Web' },
   { valor: '/projetos/sistema-tarefas.png', label: 'Sistema de Tarefas' },
   { valor: '/projetos/chatbot-ia.png', label: 'Chatbot IA' },
+  { valor: '/projetos/default.png', label: 'Padrão' },
 ]
 
-export default function AdminPanel() {
+interface AdminPanelProps {
+  onLogout?: () => void
+}
+
+export default function AdminPanel({ onLogout }: AdminPanelProps) {
   const [autenticado, setAutenticado] = useState(false)
   const [senha, setSenha] = useState('')
   const [erroLogin, setErroLogin] = useState('')
@@ -188,6 +193,7 @@ export default function AdminPanel() {
   const logout = () => {
     localStorage.removeItem('admin_token')
     setAutenticado(false)
+    onLogout?.()
   }
 
   const carregarProjetos = async () => {

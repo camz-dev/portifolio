@@ -74,29 +74,37 @@ export default function Home() {
   const SECRET_CODE = "camzadmin"
 
   // Carregar dados do Supabase
-  useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        const [projetosRes, skillsRes, perfilRes] = await Promise.all([
-          fetch('/api/projetos'),
-          fetch('/api/skills'),
-          fetch('/api/perfil')
-        ])
-        
-        const projetosData = await projetosRes.json()
-        const skillsData = await skillsRes.json()
-        const perfilData = await perfilRes.json()
-        
-        setProjetos(projetosData)
-        setSkills(skillsData)
-        setPerfil(perfilData)
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error)
-      }
+  const carregarDados = async () => {
+    try {
+      const [projetosRes, skillsRes, perfilRes] = await Promise.all([
+        fetch('/api/projetos'),
+        fetch('/api/skills'),
+        fetch('/api/perfil')
+      ])
+      
+      const projetosData = await projetosRes.json()
+      const skillsData = await skillsRes.json()
+      const perfilData = await perfilRes.json()
+      
+      setProjetos(projetosData)
+      setSkills(skillsData)
+      setPerfil(perfilData)
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
     }
-    
+  }
+  
+  // Carregar dados ao montar o componente
+  useEffect(() => {
     carregarDados()
   }, [])
+  
+  // Recarregar dados quando sair do modo admin
+  useEffect(() => {
+    if (!modoAdmin) {
+      carregarDados()
+    }
+  }, [modoAdmin])
 
   // Efeito de digitação
   useEffect(() => {
@@ -183,7 +191,10 @@ export default function Home() {
 
   // Se estiver no modo admin, mostrar o painel
   if (modoAdmin) {
-    return <AdminPanel />
+    return <AdminPanel onLogout={() => {
+      setModoAdmin(false)
+      carregarDados()
+    }} />
   }
 
   const enviarMensagem = async () => {
