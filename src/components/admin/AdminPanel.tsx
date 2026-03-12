@@ -138,22 +138,24 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
   const [techInput, setTechInput] = useState('')
   const [urlImagem, setUrlImagem] = useState('')
 
-  // Carregar dados
-  useEffect(() => {
-    if (autenticado) {
-      carregarProjetos()
-      carregarSkills()
-      carregarPerfil()
-    }
-  }, [autenticado])
+  // Funções de carregamento (declaradas antes do useEffect)
+  const carregarProjetos = async () => {
+    const res = await fetch('/api/projetos')
+    const data = await res.json()
+    setProjetos(data)
+  }
 
-  // Verificar autenticação salva
-  useEffect(() => {
-    const token = localStorage.getItem('admin_token')
-    if (token) {
-      verificarToken(token)
-    }
-  }, [])
+  const carregarSkills = async () => {
+    const res = await fetch('/api/skills')
+    const data = await res.json()
+    setSkills(data)
+  }
+
+  const carregarPerfil = async () => {
+    const res = await fetch('/api/perfil')
+    const data = await res.json()
+    setPerfil(data)
+  }
 
   const verificarToken = async (token: string) => {
     try {
@@ -196,23 +198,24 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
     onLogout?.()
   }
 
-  const carregarProjetos = async () => {
-    const res = await fetch('/api/projetos')
-    const data = await res.json()
-    setProjetos(data)
-  }
+  // Carregar dados quando autenticado
+  useEffect(() => {
+    if (autenticado) {
+      void carregarProjetos()
+      void carregarSkills()
+      void carregarPerfil()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autenticado])
 
-  const carregarSkills = async () => {
-    const res = await fetch('/api/skills')
-    const data = await res.json()
-    setSkills(data)
-  }
-
-  const carregarPerfil = async () => {
-    const res = await fetch('/api/perfil')
-    const data = await res.json()
-    setPerfil(data)
-  }
+  // Verificar autenticação salva
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token')
+    if (token) {
+      void verificarToken(token)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // CRUD Projetos
   const salvarProjeto = async (projeto: Partial<Projeto>) => {

@@ -64,6 +64,7 @@ export default function Home() {
   const [acessoAutorizado, setAcessoAutorizado] = useState(false)
   const [senha, setSenha] = useState('')
   const [erroSenha, setErroSenha] = useState('')
+  const [urlDetectada, setUrlDetectada] = useState(false)
   
   const [formulario, setFormulario] = useState({ nome: "", email: "", mensagem: "" })
   const [chatAberto, setChatAberto] = useState(false)
@@ -105,6 +106,7 @@ export default function Home() {
     const adminAccess = params.get(ADMIN_SECRET_PARAM)
     
     if (adminAccess === ADMIN_SECRET_KEY) {
+      setUrlDetectada(true)
       setAcessoAutorizado(true)
       
       // Verificar se já tem token salvo
@@ -114,8 +116,9 @@ export default function Home() {
       }
       
       // Limpar a URL (remover o parâmetro secreto) por segurança
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, '', newUrl)
+      setTimeout(() => {
+        window.history.replaceState({}, '', window.location.pathname)
+      }, 100)
     }
   }, [])
 
@@ -188,7 +191,10 @@ export default function Home() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">🔐 Acesso Administrativo</CardTitle>
             <CardDescription>
-              Digite sua senha para acessar o painel
+              {urlDetectada 
+                ? '✅ URL secreta detectada! Digite sua senha para continuar.'
+                : 'Digite sua senha para acessar o painel'
+              }
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -206,7 +212,10 @@ export default function Home() {
               <Button onClick={verificarSenha} className="flex-1">
                 Entrar
               </Button>
-              <Button variant="outline" onClick={() => setAcessoAutorizado(false)}>
+              <Button variant="outline" onClick={() => {
+                setAcessoAutorizado(false)
+                setUrlDetectada(false)
+              }}>
                 Voltar
               </Button>
             </div>
