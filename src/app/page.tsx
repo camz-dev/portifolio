@@ -77,7 +77,7 @@ const navItems = [
   { id: 'contact', label: 'Contato', icon: Phone },
 ]
 
-export default function Home() {
+export default function PortfolioPage() {
   // Estados
   const [currentSection, setCurrentSection] = useState('home')
   const [sidebarOpen, setSidebarOpen] = useState(false)
