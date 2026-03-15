@@ -97,6 +97,33 @@ export interface Education {
   order_index: number
 }
 
+export interface Theme {
+  id: string
+  name: string
+  primary_color: string
+  secondary_color: string
+  accent_color: string
+  background_color: string
+  text_color: string
+  font_primary: string
+  font_secondary: string
+  border_radius: 'none' | 'sm' | 'md' | 'lg' | 'full'
+  active: boolean
+}
+
+export interface Settings {
+  id: string
+  site_name: string
+  site_description: string
+  favicon_url?: string
+  logo_url?: string
+  google_analytics_id?: string
+  meta_keywords: string[]
+  social_image_url?: string
+  language: string
+  timezone: string
+}
+
 export interface Message {
   name: string
   email: string
@@ -211,6 +238,39 @@ export async function getEducation(): Promise<Education[]> {
   } catch (error) {
     console.error('Erro ao buscar educação:', error)
     return []
+  }
+}
+
+export async function getActiveTheme(): Promise<Theme | null> {
+  try {
+    const { data, error } = await supabase
+      .from('themes')
+      .select('*')
+      .eq('active', true)
+      .limit(1)
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Erro ao buscar tema:', error)
+    return null
+  }
+}
+
+export async function getSettings(): Promise<Settings | null> {
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .limit(1)
+      .single()
+    
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Erro ao buscar configurações:', error)
+    return null
   }
 }
 

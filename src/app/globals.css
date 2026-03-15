@@ -3,16 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
-===========================================
-📚 EXPLICAÇÃO: TEMA ESCURO COM VERDE
-===========================================
-Vamos criar um tema escuro elegante com tons de verde.
-- --background: fundo escuro (preto/cinza muito escuro)
-- --primary: verde principal
-- Gradientes para criar profundidade
-*/
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -53,20 +43,67 @@ Vamos criar um tema escuro elegante com tons de verde.
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ==========================================
+   LIGHT THEME (padrão)
+   ========================================== */
 :root {
   --radius: 0.625rem;
   
-  /* Tema escuro com verde - aplicado por padrão */
-  --background: oklch(0.12 0.01 150);  /* Fundo escuro com leve tom verde */
-  --foreground: oklch(0.95 0 0);        /* Texto claro */
-  --card: oklch(0.15 0.01 150);         /* Cards um pouco mais claros */
+  /* Tema claro */
+  --background: oklch(0.98 0.005 150);
+  --foreground: oklch(0.15 0.02 150);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.02 150);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.02 150);
+  
+  /* Verde principal */
+  --primary: oklch(0.55 0.18 145);
+  --primary-foreground: oklch(0.98 0 0);
+  
+  --secondary: oklch(0.95 0.02 150);
+  --secondary-foreground: oklch(0.2 0.02 150);
+  --muted: oklch(0.95 0.01 150);
+  --muted-foreground: oklch(0.45 0.02 150);
+  --accent: oklch(0.92 0.03 150);
+  --accent-foreground: oklch(0.2 0.02 150);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.88 0.01 150);
+  --input: oklch(0.88 0.01 150);
+  --ring: oklch(0.55 0.18 145);
+  
+  /* Cores para gráficos */
+  --chart-1: oklch(0.55 0.18 145);
+  --chart-2: oklch(0.6 0.15 155);
+  --chart-3: oklch(0.5 0.12 140);
+  --chart-4: oklch(0.65 0.1 150);
+  --chart-5: oklch(0.45 0.08 145);
+  
+  /* Sidebar */
+  --sidebar: oklch(0.97 0.005 150);
+  --sidebar-foreground: oklch(0.15 0.02 150);
+  --sidebar-primary: oklch(0.55 0.18 145);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.92 0.02 150);
+  --sidebar-accent-foreground: oklch(0.2 0.02 150);
+  --sidebar-border: oklch(0.88 0.01 150);
+  --sidebar-ring: oklch(0.55 0.18 145);
+}
+
+/* ==========================================
+   DARK THEME
+   ========================================== */
+.dark {
+  --background: oklch(0.12 0.01 150);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.15 0.01 150);
   --card-foreground: oklch(0.95 0 0);
   --popover: oklch(0.15 0.01 150);
   --popover-foreground: oklch(0.95 0 0);
   
   /* Verde principal - tons de esmeralda */
-  --primary: oklch(0.7 0.15 160);        /* Verde vibrante */
-  --primary-foreground: oklch(0.12 0 0);  /* Texto escuro no botão */
+  --primary: oklch(0.7 0.15 160);
+  --primary-foreground: oklch(0.12 0 0);
   
   --secondary: oklch(0.25 0.02 150);
   --secondary-foreground: oklch(0.95 0 0);
@@ -77,14 +114,14 @@ Vamos criar um tema escuro elegante com tons de verde.
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.25 0.02 150);
   --input: oklch(0.25 0.02 150);
-  --ring: oklch(0.7 0.15 160);  /* Verde no ring (foco) */
+  --ring: oklch(0.7 0.15 160);
   
   /* Cores para gráficos */
-  --chart-1: oklch(0.7 0.15 160);  /* Verde principal */
-  --chart-2: oklch(0.6 0.12 170);  /* Verde água */
-  --chart-3: oklch(0.5 0.1 150);   /* Verde mais escuro */
-  --chart-4: oklch(0.8 0.1 140);   /* Verde claro */
-  --chart-5: oklch(0.4 0.08 160);  /* Verde muito escuro */
+  --chart-1: oklch(0.7 0.15 160);
+  --chart-2: oklch(0.6 0.12 170);
+  --chart-3: oklch(0.5 0.1 150);
+  --chart-4: oklch(0.8 0.1 140);
+  --chart-5: oklch(0.4 0.08 160);
   
   /* Sidebar */
   --sidebar: oklch(0.1 0.01 150);
@@ -97,38 +134,39 @@ Vamos criar um tema escuro elegante com tons de verde.
   --sidebar-ring: oklch(0.7 0.15 160);
 }
 
-/*
-===========================================
-📚 EXPLICAÇÃO: GRADIENTE DE FUNDO
-===========================================
-Vamos criar um gradiente sutil de verde no fundo.
-O gradiente vai do canto superior esquerdo ao inferior direito.
-*/
-
+/* ==========================================
+   BASE STYLES
+   ========================================== */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-    /* Gradiente de fundo com verde */
-    background: 
-      radial-gradient(ellipse at 20% 0%, oklch(0.2 0.03 160 / 0.3) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 100%, oklch(0.15 0.04 150 / 0.2) 0%, transparent 50%),
-      oklch(0.12 0.01 150);
-    background-attachment: fixed;  /* Fundo fixo quando rola */
   }
 }
 
-/*
-===========================================
-📚 EXPLICAÇÃO: ANIMAÇÃO DAS PARTÍCULAS
-===========================================
-Vamos criar animações CSS para as partículas flutuantes.
-- float: movimento suave para cima e para os lados
-- pulse: brilho pulsante
-*/
+/* Light mode background */
+:root body {
+  background: 
+    radial-gradient(ellipse at 20% 0%, oklch(0.93 0.03 150 / 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, oklch(0.95 0.04 145 / 0.3) 0%, transparent 50%),
+    oklch(0.98 0.005 150);
+  background-attachment: fixed;
+}
 
+/* Dark mode background */
+.dark body {
+  background: 
+    radial-gradient(ellipse at 20% 0%, oklch(0.2 0.03 160 / 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, oklch(0.15 0.04 150 / 0.2) 0%, transparent 50%),
+    oklch(0.12 0.01 150);
+  background-attachment: fixed;
+}
+
+/* ==========================================
+   ANIMAÇÕES
+   ========================================== */
 @keyframes float {
   0%, 100% {
     transform: translateY(0) translateX(0);
@@ -146,23 +184,6 @@ Vamos criar animações CSS para as partículas flutuantes.
   }
 }
 
-@keyframes float-reverse {
-  0%, 100% {
-    transform: translateY(0) translateX(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(-20px);
-    opacity: 0;
-  }
-}
-
 @keyframes pulse-glow {
   0%, 100% {
     box-shadow: 0 0 5px oklch(0.7 0.15 160 / 0.5);
@@ -172,38 +193,146 @@ Vamos criar animações CSS para as partículas flutuantes.
   }
 }
 
-/* Classe para partículas */
 .particle {
   position: absolute;
   border-radius: 50%;
-  pointer-events: none;  /* Não interfere nos cliques */
+  pointer-events: none;
   animation: float linear infinite;
 }
 
-/* Efeito de brilho verde para elementos */
-.glow-green {
-  box-shadow: 0 0 20px oklch(0.7 0.15 160 / 0.4);
-}
-
-/* Efeito de vidro (glassmorphism) */
+/* ==========================================
+   CLASSES UTILITÁRIAS
+   ========================================== */
 .glass {
   background: oklch(0.15 0.01 150 / 0.6);
   backdrop-filter: blur(10px);
   border: 1px solid oklch(0.3 0.02 160 / 0.3);
 }
 
-/* Gradiente de texto verde */
+:root .glass {
+  background: oklch(1 0 0 / 0.7);
+  border: 1px solid oklch(0.8 0.02 150 / 0.5);
+}
+
 .text-gradient-green {
-  background: linear-gradient(135deg, oklch(0.8 0.12 160), oklch(0.6 0.15 150));
+  background: linear-gradient(135deg, oklch(0.7 0.15 160), oklch(0.55 0.18 145));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Efeito de borda verde brilhante */
+:root .text-gradient-green {
+  background: linear-gradient(135deg, oklch(0.55 0.18 145), oklch(0.45 0.2 140));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .border-glow {
   border: 1px solid oklch(0.5 0.1 160 / 0.5);
   box-shadow: 
     0 0 10px oklch(0.7 0.15 160 / 0.2),
     inset 0 0 10px oklch(0.7 0.15 160 / 0.1);
+}
+
+:root .border-glow {
+  border: 1px solid oklch(0.6 0.1 145 / 0.4);
+  box-shadow: 
+    0 0 10px oklch(0.55 0.18 145 / 0.15),
+    inset 0 0 10px oklch(0.55 0.18 145 / 0.05);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px oklch(0.7 0.15 160 / 0.4);
+}
+
+:root .glow-green {
+  box-shadow: 0 0 20px oklch(0.55 0.18 145 / 0.3);
+}
+
+/* ==========================================
+   SCROLLBAR
+   ========================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.2 0.01 150);
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.35 0.03 150);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.45 0.05 150);
+}
+
+:root ::-webkit-scrollbar-track {
+  background: oklch(0.9 0.01 150);
+}
+
+:root ::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0.03 150);
+}
+
+:root ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.6 0.05 150);
+}
+
+/* ==========================================
+   TIMELINE (para experiências)
+   ========================================== */
+.timeline-line {
+  position: absolute;
+  left: 1.25rem;
+  top: 2.5rem;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--primary), transparent);
+}
+
+.timeline-dot {
+  position: absolute;
+  left: 0.875rem;
+  top: 0.5rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+}
+
+/* ==========================================
+   ANIMAÇÕES DE ENTRADA
+   ========================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* ==========================================
+   SELECTION
+   ========================================== */
+::selection {
+  background: oklch(0.7 0.15 160 / 0.3);
+  color: oklch(0.95 0 0);
+}
+
+:root ::selection {
+  background: oklch(0.55 0.18 145 / 0.3);
+  color: oklch(0.15 0.02 150);
 }
