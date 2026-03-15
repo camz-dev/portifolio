@@ -11,7 +11,7 @@ import {
   Github, Linkedin, Mail, ExternalLink, Code, Database, 
   Brain, Globe, Rocket, MessageCircle, Send, User, 
   Briefcase, GraduationCap, Heart, MapPin, Calendar,
-  Building2, School, Clock, CheckCircle, Home, FolderKanban,
+  Building2, School, Clock, CheckCircle, Home as HomeIcon, FolderKanban,
   Wrench, Phone, Menu, X, Sparkles, BookOpen
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -68,7 +68,7 @@ const defaultContacts: Contact[] = [
 
 // Navigation items
 const navItems = [
-  { id: 'home', label: 'Início', icon: Home },
+  { id: 'home', label: 'Início', icon: HomeIcon },
   { id: 'about', label: 'Sobre', icon: User },
   { id: 'experience', label: 'Experiência', icon: Briefcase },
   { id: 'education', label: 'Educação', icon: GraduationCap },
