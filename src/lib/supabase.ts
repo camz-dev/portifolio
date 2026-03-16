@@ -144,6 +144,25 @@ export interface Message {
 }
 
 // Funções de busca
+// Helper para converter technologies em array
+function parseTechnologies(tech: unknown): string[] {
+  if (Array.isArray(tech)) return tech
+  if (typeof tech === 'string') {
+    // PostgreSQL array format: {item1,item2}
+    if (tech.startsWith('{') && tech.endsWith('}')) {
+      return tech.slice(1, -1).split(',').filter(Boolean)
+    }
+    // JSON string format
+    try {
+      const parsed = JSON.parse(tech)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return tech.split(',').filter(Boolean)
+    }
+  }
+  return []
+}
+
 export async function getProjects(): Promise<Project[]> {
   try {
     const { data, error } = await supabase
@@ -157,7 +176,7 @@ export async function getProjects(): Promise<Project[]> {
     // Garantir que technologies seja sempre um array
     return (data || []).map(p => ({
       ...p,
-      technologies: Array.isArray(p.technologies) ? p.technologies : []
+      technologies: parseTechnologies(p.technologies)
     })) as Project[]
   } catch (error) {
     console.error('Erro ao buscar projetos:', error)
@@ -240,7 +259,7 @@ export async function getExperiences(): Promise<Experience[]> {
     // Garantir que technologies seja sempre um array
     return (data || []).map(e => ({
       ...e,
-      technologies: Array.isArray(e.technologies) ? e.technologies : []
+      technologies: parseTechnologies(e.technologies)
     })) as Experience[]
   } catch (error) {
     console.error('Erro ao buscar experiências:', error)

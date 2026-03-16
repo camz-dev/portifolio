@@ -226,7 +226,7 @@ export default function PortfolioPage() {
   const renderSection = () => {
     switch (currentSection) {
       case 'home':
-        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} />
+        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} projects={projects} skills={skills} />
       case 'about':
         return <AboutSection profile={profile} theme={theme} />
       case 'experience':
@@ -240,7 +240,7 @@ export default function PortfolioPage() {
       case 'contact':
         return <ContactSection contacts={contacts} profile={profile} formulario={formulario} setFormulario={setFormulario} enviarFormulario={enviarFormulario} formEnviado={formEnviado} getSocialIcon={getSocialIcon} theme={theme} />
       default:
-        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} />
+        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} projects={projects} skills={skills} />
     }
   }
 
@@ -451,7 +451,7 @@ export default function PortfolioPage() {
 // SECTIONS
 // ============================================
 
-function HomeSection({ hero, profile, textoDigitado, navigateTo, theme }: { hero: Hero | null; profile: Profile | null; textoDigitado: string; navigateTo: (section: string) => void; theme: Theme | null }) {
+function HomeSection({ hero, profile, textoDigitado, navigateTo, theme, projects, skills }: { hero: Hero | null; profile: Profile | null; textoDigitado: string; navigateTo: (section: string) => void; theme: Theme | null; projects: Project[]; skills: Skill[] }) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex flex-col items-center text-center py-12 lg:py-20">
