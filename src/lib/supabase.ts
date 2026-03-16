@@ -42,6 +42,7 @@ export interface Profile {
   location?: string
   email?: string
   phone?: string
+  whatsapp?: string
   availability: 'available' | 'busy' | 'unavailable'
   years_experience: number
 }
@@ -104,10 +105,21 @@ export interface Theme {
   secondary_color: string
   accent_color: string
   background_color: string
+  card_background?: string
   text_color: string
+  muted_color?: string
+  border_color?: string
   font_primary: string
   font_secondary: string
-  border_radius: 'none' | 'sm' | 'md' | 'lg' | 'full'
+  border_radius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  // Animation settings
+  animation_type?: 'none' | 'fade' | 'slide' | 'scale' | 'bounce' | 'flip'
+  animation_duration?: number
+  animation_delay?: number
+  hover_effect?: 'none' | 'scale' | 'lift' | 'glow' | 'shine'
+  particle_effect?: boolean
+  gradient_animation?: boolean
+  cursor_effect?: 'none' | 'trail' | 'sparkle' | 'bubble'
   active: boolean
 }
 
@@ -141,7 +153,12 @@ export async function getProjects(): Promise<Project[]> {
       .order('order_index')
     
     if (error) throw error
-    return data || []
+    
+    // Garantir que technologies seja sempre um array
+    return (data || []).map(p => ({
+      ...p,
+      technologies: Array.isArray(p.technologies) ? p.technologies : []
+    })) as Project[]
   } catch (error) {
     console.error('Erro ao buscar projetos:', error)
     return []
@@ -219,7 +236,12 @@ export async function getExperiences(): Promise<Experience[]> {
       .order('order_index')
     
     if (error) throw error
-    return data || []
+    
+    // Garantir que technologies seja sempre um array
+    return (data || []).map(e => ({
+      ...e,
+      technologies: Array.isArray(e.technologies) ? e.technologies : []
+    })) as Experience[]
   } catch (error) {
     console.error('Erro ao buscar experiências:', error)
     return []

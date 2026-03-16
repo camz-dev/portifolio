@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { 
   Github, Linkedin, Mail, ExternalLink, Code, Database, 
   Brain, Globe, Rocket, MessageCircle, Send, User, 
   Briefcase, GraduationCap, Heart, MapPin, Calendar,
   Building2, School, Clock, CheckCircle, Home as HomeIcon, FolderKanban,
-  Wrench, Phone, Menu, X, Sparkles, BookOpen
+  Wrench, Phone, Menu, X, Sparkles, BookOpen, Image as ImageIcon,
+  MessageSquare
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
@@ -20,9 +20,9 @@ import ParticleBackground from "@/components/particle-background"
 import { ThemeToggle } from "@/components/theme/theme-provider"
 import { 
   getProjects, getSkills, getProfile, getHero, 
-  getContacts, getExperiences, getEducation, sendMessage,
+  getContacts, getExperiences, getEducation, sendMessage, getActiveTheme,
   type Project, type Skill, type Profile, type Hero, 
-  type Contact, type Experience, type Education 
+  type Contact, type Experience, type Education, type Theme
 } from "@/lib/supabase"
 
 // Fallbacks
@@ -88,6 +88,7 @@ export default function PortfolioPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [experiences, setExperiences] = useState<Experience[]>([])
   const [education, setEducation] = useState<Education[]>([])
+  const [theme, setTheme] = useState<Theme | null>(null)
   const [loading, setLoading] = useState(true)
   
   const [formulario, setFormulario] = useState({ nome: "", email: "", mensagem: "" })
@@ -104,8 +105,8 @@ export default function PortfolioPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [profileData, heroData, projectsData, skillsData, contactsData, experiencesData, educationData] = await Promise.all([
-          getProfile(), getHero(), getProjects(), getSkills(), getContacts(), getExperiences(), getEducation()
+        const [profileData, heroData, projectsData, skillsData, contactsData, experiencesData, educationData, themeData] = await Promise.all([
+          getProfile(), getHero(), getProjects(), getSkills(), getContacts(), getExperiences(), getEducation(), getActiveTheme()
         ])
         
         setProfile(profileData || defaultProfile)
@@ -115,6 +116,7 @@ export default function PortfolioPage() {
         setContacts(contactsData.length > 0 ? contactsData : defaultContacts)
         setExperiences(experiencesData)
         setEducation(educationData)
+        setTheme(themeData)
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
         setProfile(defaultProfile)
@@ -128,6 +130,23 @@ export default function PortfolioPage() {
     }
     fetchData()
   }, [])
+  
+  // Aplicar tema
+  useEffect(() => {
+    if (theme) {
+      document.documentElement.style.setProperty('--primary', theme.primary_color)
+      document.documentElement.style.setProperty('--secondary', theme.secondary_color)
+      document.documentElement.style.setProperty('--accent', theme.accent_color)
+      document.documentElement.style.setProperty('--background', theme.background_color)
+      document.documentElement.style.setProperty('--foreground', theme.text_color)
+      if (theme.card_background) {
+        document.documentElement.style.setProperty('--card', theme.card_background)
+      }
+      if (theme.muted_color) {
+        document.documentElement.style.setProperty('--muted-foreground', theme.muted_color)
+      }
+    }
+  }, [theme])
   
   // Efeito de digitação
   useEffect(() => {
@@ -180,8 +199,22 @@ export default function PortfolioPage() {
   // Helpers
   const getCategoryIcon = (cat: string) => ({ frontend: Globe, backend: Code, database: Database, devops: Rocket, design: Brain }[cat] || Code)
   const getCategoryColor = (cat: string) => ({ frontend: 'bg-emerald-500', backend: 'bg-green-500', database: 'bg-teal-500', devops: 'bg-emerald-600', design: 'bg-green-600' }[cat] || 'bg-emerald-500')
-  const getSocialIcon = (platform: string) => ({ GitHub: Github, Linkedin, LinkedIn: Linkedin, Email: Mail }[platform] || Mail)
+  const getSocialIcon = (platform: string) => ({ GitHub: Github, Linkedin, LinkedIn: Linkedin, Email: Mail, WhatsApp: MessageSquare }[platform] || Mail)
   const formatDate = (date: string) => new Date(date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+  
+  // Theme helpers
+  const getThemeBorderRadius = () => {
+    if (!theme?.border_radius) return '0.5rem'
+    const radiusMap: Record<string, string> = {
+      'none': '0',
+      'sm': '0.25rem',
+      'md': '0.5rem',
+      'lg': '0.75rem',
+      'xl': '1rem',
+      'full': '9999px'
+    }
+    return radiusMap[theme.border_radius] || '0.5rem'
+  }
 
   // Navegação
   const navigateTo = (section: string) => {
@@ -193,21 +226,21 @@ export default function PortfolioPage() {
   const renderSection = () => {
     switch (currentSection) {
       case 'home':
-        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} />
+        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} />
       case 'about':
-        return <AboutSection profile={profile} />
+        return <AboutSection profile={profile} theme={theme} />
       case 'experience':
-        return <ExperienceSection experiences={experiences} formatDate={formatDate} />
+        return <ExperienceSection experiences={experiences} formatDate={formatDate} theme={theme} />
       case 'education':
-        return <EducationSection education={education} formatDate={formatDate} />
+        return <EducationSection education={education} formatDate={formatDate} theme={theme} />
       case 'projects':
-        return <ProjectsSection projects={projects} />
+        return <ProjectsSection projects={projects} theme={theme} getThemeBorderRadius={getThemeBorderRadius} />
       case 'skills':
-        return <SkillsSection skills={skills} getCategoryIcon={getCategoryIcon} getCategoryColor={getCategoryColor} />
+        return <SkillsSection skills={skills} getCategoryIcon={getCategoryIcon} getCategoryColor={getCategoryColor} theme={theme} />
       case 'contact':
-        return <ContactSection contacts={contacts} formulario={formulario} setFormulario={setFormulario} enviarFormulario={enviarFormulario} formEnviado={formEnviado} getSocialIcon={getSocialIcon} />
+        return <ContactSection contacts={contacts} profile={profile} formulario={formulario} setFormulario={setFormulario} enviarFormulario={enviarFormulario} formEnviado={formEnviado} getSocialIcon={getSocialIcon} theme={theme} />
       default:
-        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} />
+        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} />
     }
   }
 
@@ -224,7 +257,7 @@ export default function PortfolioPage() {
 
   return (
     <div className="min-h-screen flex bg-background relative">
-      <ParticleBackground quantidade={30} />
+      <ParticleBackground quantidade={theme?.particle_effect === false ? 0 : 30} />
       
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
@@ -254,7 +287,12 @@ export default function PortfolioPage() {
             {/* Logo */}
             <div className="p-6 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
+                <div 
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'})`
+                  }}
+                >
                   <Code className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -278,6 +316,7 @@ export default function PortfolioPage() {
                         ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
                         : 'hover:bg-muted text-muted-foreground hover:text-foreground'
                     }`}
+                    style={isActive ? { backgroundColor: theme?.primary_color || undefined } : {}}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.label}</span>
@@ -292,8 +331,8 @@ export default function PortfolioPage() {
                 <span className="text-sm text-muted-foreground">Tema</span>
                 <ThemeToggle />
               </div>
-              <div className="flex gap-2 justify-center">
-                {contacts.slice(0, 3).map((contact) => {
+              <div className="flex gap-2 justify-center flex-wrap">
+                {contacts.slice(0, 4).map((contact) => {
                   const IconComponent = getSocialIcon(contact.platform)
                   return (
                     <a
@@ -349,6 +388,7 @@ export default function PortfolioPage() {
         onClick={() => setChatAberto(!chatAberto)}
         size="icon"
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg z-50"
+        style={{ backgroundColor: theme?.primary_color || undefined }}
       >
         <MessageCircle className="h-6 w-6" />
       </Button>
@@ -363,7 +403,10 @@ export default function PortfolioPage() {
             className="fixed bottom-24 right-6 w-80 z-50"
           >
             <Card className="shadow-xl">
-              <CardHeader className="bg-primary text-primary-foreground rounded-t-lg">
+              <CardHeader 
+                className="text-primary-foreground rounded-t-lg"
+                style={{ backgroundColor: theme?.primary_color || undefined }}
+              >
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Brain className="h-5 w-5" />Assistente IA
                 </CardTitle>
@@ -372,7 +415,10 @@ export default function PortfolioPage() {
                 <div className="h-64 overflow-y-auto p-4 space-y-3">
                   {mensagens.map((msg, index) => (
                     <div key={index} className={`flex ${msg.autor === 'usuario' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${msg.autor === 'usuario' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>{msg.texto}</div>
+                      <div 
+                        className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${msg.autor === 'usuario' ? 'text-primary-foreground' : 'bg-muted'}`}
+                        style={msg.autor === 'usuario' ? { backgroundColor: theme?.primary_color || undefined } : {}}
+                      >{msg.texto}</div>
                     </div>
                   ))}
                   {carregando && (
@@ -390,7 +436,7 @@ export default function PortfolioPage() {
                 </div>
                 <div className="p-4 border-t flex gap-2">
                   <Input placeholder="Mensagem..." value={inputChat} onChange={(e) => setInputChat(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !carregando && enviarMensagem()} className="flex-1" disabled={carregando} />
-                  <Button size="icon" onClick={enviarMensagem} disabled={carregando}><Send className="h-4 w-4" /></Button>
+                  <Button size="icon" onClick={enviarMensagem} disabled={carregando} style={{ backgroundColor: theme?.primary_color || undefined }}><Send className="h-4 w-4" /></Button>
                 </div>
               </CardContent>
             </Card>
@@ -405,14 +451,20 @@ export default function PortfolioPage() {
 // SECTIONS
 // ============================================
 
-function HomeSection({ hero, profile, textoDigitado, navigateTo }: { hero: Hero | null; profile: Profile | null; textoDigitado: string; navigateTo: (section: string) => void }) {
+function HomeSection({ hero, profile, textoDigitado, navigateTo, theme }: { hero: Hero | null; profile: Profile | null; textoDigitado: string; navigateTo: (section: string) => void; theme: Theme | null }) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex flex-col items-center text-center py-12 lg:py-20">
         {/* Avatar */}
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }} className="relative mb-8">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 blur-md opacity-60 animate-pulse" />
-          <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center border-glow overflow-hidden">
+          <div 
+            className="absolute inset-0 rounded-full blur-md opacity-60 animate-pulse"
+            style={{ background: `linear-gradient(90deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'}, ${theme?.accent_color || '#06b6d4'})` }}
+          />
+          <div 
+            className="relative w-32 h-32 rounded-full flex items-center justify-center border-glow overflow-hidden"
+            style={{ background: `linear-gradient(135deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'})` }}
+          >
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
@@ -425,7 +477,7 @@ function HomeSection({ hero, profile, textoDigitado, navigateTo }: { hero: Hero 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <h1 className="text-4xl lg:text-5xl font-bold mb-4">
             {hero?.title?.split(profile?.name || 'Camile Pereira')[0] || 'Olá, eu sou '}
-            <span className="text-gradient-green">{textoDigitado}<span className="animate-pulse">|</span></span>
+            <span style={{ color: theme?.primary_color || '#10b981' }}>{textoDigitado}<span className="animate-pulse">|</span></span>
           </h1>
           <p className="text-xl lg:text-2xl text-muted-foreground">{hero?.subtitle || profile?.title}</p>
         </motion.div>
@@ -438,7 +490,10 @@ function HomeSection({ hero, profile, textoDigitado, navigateTo }: { hero: Hero 
         {/* Availability */}
         {profile?.availability && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-2 mt-6">
-            <span className={`w-3 h-3 rounded-full ${profile.availability === 'available' ? 'bg-emerald-500' : profile.availability === 'busy' ? 'bg-yellow-500' : 'bg-red-500'} animate-pulse`} />
+            <span 
+              className={`w-3 h-3 rounded-full animate-pulse`}
+              style={{ backgroundColor: profile.availability === 'available' ? (theme?.primary_color || '#10b981') : profile.availability === 'busy' ? '#eab308' : '#ef4444' }}
+            />
             <span className="text-muted-foreground">
               {profile.availability === 'available' ? 'Disponível para projetos' : profile.availability === 'busy' ? 'Ocupado no momento' : 'Indisponível'}
             </span>
@@ -447,11 +502,20 @@ function HomeSection({ hero, profile, textoDigitado, navigateTo }: { hero: Hero 
 
         {/* CTA Buttons */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex gap-4 mt-8">
-          <Button size="lg" onClick={() => navigateTo(hero?.cta_url || 'projects')}>
+          <Button 
+            size="lg" 
+            onClick={() => navigateTo(hero?.cta_url || 'projects')}
+            style={{ backgroundColor: theme?.primary_color || undefined }}
+          >
             <Sparkles className="mr-2 h-5 w-5" />
             {hero?.cta_text || 'Ver Projetos'}
           </Button>
-          <Button size="lg" variant="outline" onClick={() => navigateTo(hero?.secondary_cta_url || 'contact')}>
+          <Button 
+            size="lg" 
+            variant="outline" 
+            onClick={() => navigateTo(hero?.secondary_cta_url || 'contact')}
+            style={{ borderColor: theme?.primary_color || undefined, color: theme?.primary_color || undefined }}
+          >
             <Mail className="mr-2 h-5 w-5" />
             {hero?.secondary_cta_text || 'Contato'}
           </Button>
@@ -460,15 +524,15 @@ function HomeSection({ hero, profile, textoDigitado, navigateTo }: { hero: Hero 
         {/* Quick Stats */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="grid grid-cols-3 gap-6 mt-12">
           <div className="text-center">
-            <p className="text-3xl font-bold text-primary">{profile?.years_experience || '2'}+</p>
+            <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{profile?.years_experience || '2'}+</p>
             <p className="text-sm text-muted-foreground">Anos Estudando</p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-primary">10+</p>
+            <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{projects?.length || 10}+</p>
             <p className="text-sm text-muted-foreground">Projetos</p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-primary">6+</p>
+            <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{skills?.length || 6}+</p>
             <p className="text-sm text-muted-foreground">Tecnologias</p>
           </div>
         </motion.div>
@@ -477,19 +541,22 @@ function HomeSection({ hero, profile, textoDigitado, navigateTo }: { hero: Hero 
   )
 }
 
-function AboutSection({ profile }: { profile: Profile | null }) {
+function AboutSection({ profile, theme }: { profile: Profile | null; theme: Theme | null }) {
   return (
     <div className="max-w-4xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <User className="h-8 w-8 text-primary" />
+          <User className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
           Sobre Mim
         </h2>
         
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary" />Quem sou</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                Quem sou
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground">
               <p>{profile?.bio}</p>
@@ -498,7 +565,10 @@ function AboutSection({ profile }: { profile: Profile | null }) {
           
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" />Localização</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                Localização
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground">
               <p className="flex items-center gap-2">📍 {profile?.location || 'Brasil'}</p>
@@ -508,21 +578,24 @@ function AboutSection({ profile }: { profile: Profile | null }) {
           
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><GraduationCap className="h-5 w-5 text-primary" />Objetivos</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                Contato
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-muted-foreground">
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2"><span className="text-primary">•</span> Dominar tecnologias web modernas</li>
-                <li className="flex items-center gap-2"><span className="text-primary">•</span> Criar projetos impactantes</li>
-                <li className="flex items-center gap-2"><span className="text-primary">•</span> Contribuir com a comunidade</li>
-                <li className="flex items-center gap-2"><span className="text-primary">•</span> Integrar IA em aplicações</li>
-              </ul>
+            <CardContent className="text-muted-foreground space-y-2">
+              {profile?.email && <p className="flex items-center gap-2">📧 {profile.email}</p>}
+              {profile?.whatsapp && <p className="flex items-center gap-2">📱 WhatsApp: {profile.whatsapp}</p>}
+              {profile?.phone && <p className="flex items-center gap-2">📞 {profile.phone}</p>}
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Heart className="h-5 w-5 text-primary" />Interesses</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                Interesses
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -540,12 +613,12 @@ function AboutSection({ profile }: { profile: Profile | null }) {
   )
 }
 
-function ExperienceSection({ experiences, formatDate }: { experiences: Experience[]; formatDate: (date: string) => string }) {
+function ExperienceSection({ experiences, formatDate, theme }: { experiences: Experience[]; formatDate: (date: string) => string; theme: Theme | null }) {
   return (
     <div className="max-w-4xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <Briefcase className="h-8 w-8 text-primary" />
+          <Briefcase className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
           Experiências
         </h2>
         
@@ -553,13 +626,13 @@ function ExperienceSection({ experiences, formatDate }: { experiences: Experienc
           <div className="space-y-6">
             {experiences.map((exp, index) => (
               <motion.div key={exp.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}>
-                <Card className="relative pl-8 ml-4 border-l-2 border-l-primary">
-                  <div className="absolute left-0 top-6 w-3 h-3 rounded-full bg-primary -translate-x-[7px]" />
+                <Card className="relative pl-8 ml-4" style={{ borderLeftColor: theme?.primary_color || undefined, borderLeftWidth: 2 }}>
+                  <div className="absolute left-0 top-6 w-3 h-3 rounded-full -translate-x-[7px]" style={{ backgroundColor: theme?.primary_color || '#10b981' }} />
                   <CardHeader>
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <CardTitle className="flex items-center gap-2">
-                          <Building2 className="h-5 w-5 text-primary" />
+                          <Building2 className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
                           {exp.position}
                         </CardTitle>
                         <CardDescription className="text-lg font-medium text-foreground mt-1">{exp.company}</CardDescription>
@@ -567,14 +640,18 @@ function ExperienceSection({ experiences, formatDate }: { experiences: Experienc
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4" />
                         {formatDate(exp.start_date)} - {exp.current ? 'Presente' : exp.end_date ? formatDate(exp.end_date) : ''}
-                        {exp.current && <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">Atual</Badge>}
+                        {exp.current && <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>Atual</Badge>}
                       </div>
                     </div>
                     {exp.location && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1"><MapPin className="w-3 h-3" />{exp.location}</p>}
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground mb-4">{exp.description}</p>
-                    <div className="flex flex-wrap gap-2">{exp.technologies?.map((tech) => <Badge key={tech} variant="outline">{tech}</Badge>)}</div>
+                    {exp.technologies && exp.technologies.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {exp.technologies.map((tech) => <Badge key={tech} variant="outline">{tech}</Badge>)}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -594,12 +671,12 @@ function ExperienceSection({ experiences, formatDate }: { experiences: Experienc
   )
 }
 
-function EducationSection({ education, formatDate }: { education: Education[]; formatDate: (date: string) => string }) {
+function EducationSection({ education, formatDate, theme }: { education: Education[]; formatDate: (date: string) => string; theme: Theme | null }) {
   return (
     <div className="max-w-4xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <GraduationCap className="h-8 w-8 text-primary" />
+          <GraduationCap className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
           Educação
         </h2>
         
@@ -613,7 +690,9 @@ function EducationSection({ education, formatDate }: { education: Education[]; f
                       {edu.logo_url ? (
                         <img src={edu.logo_url} alt={edu.institution} className="w-12 h-12 rounded-lg object-contain bg-muted p-2" />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center"><School className="w-6 h-6 text-primary" /></div>
+                        <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20` }}>
+                          <School className="w-6 h-6" style={{ color: theme?.primary_color || undefined }} />
+                        </div>
                       )}
                       <div className="flex-1">
                         <CardTitle className="text-lg">{edu.degree}</CardTitle>
@@ -626,7 +705,7 @@ function EducationSection({ education, formatDate }: { education: Education[]; f
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                       <Clock className="w-4 h-4" />
                       {formatDate(edu.start_date)} - {edu.current ? 'Presente' : edu.end_date ? formatDate(edu.end_date) : ''}
-                      {edu.current && <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">Cursando</Badge>}
+                      {edu.current && <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>Cursando</Badge>}
                     </div>
                     {edu.description && <p className="text-sm text-muted-foreground">{edu.description}</p>}
                   </CardContent>
@@ -648,52 +727,100 @@ function EducationSection({ education, formatDate }: { education: Education[]; f
   )
 }
 
-function ProjectsSection({ projects }: { projects: Project[] }) {
+function ProjectsSection({ projects, theme, getThemeBorderRadius }: { projects: Project[]; theme: Theme | null; getThemeBorderRadius: () => string }) {
   return (
     <div className="max-w-5xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <FolderKanban className="h-8 w-8 text-primary" />
+          <FolderKanban className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
           Meus Projetos
         </h2>
         
         <div className="grid md:grid-cols-2 gap-6">
           {projects.map((projeto, index) => (
             <motion.div key={projeto.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-              <Card className="h-full hover:shadow-lg transition-all hover:border-primary/50 group overflow-hidden">
-                {projeto.image_url && (
+              <Card className="h-full hover:shadow-lg transition-all group overflow-hidden" style={{ borderRadius: getThemeBorderRadius() }}>
+                {projeto.image_url ? (
                   <div className="aspect-video bg-muted overflow-hidden">
                     <img src={projeto.image_url} alt={projeto.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
                   </div>
                 )}
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     {projeto.title}
                     <div className="flex gap-2">
-                      {projeto.demo_url && <a href={projeto.demo_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"><ExternalLink className="h-4 w-4" /></a>}
-                      {projeto.github_url && <a href={projeto.github_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors"><Github className="h-4 w-4" /></a>}
+                      {projeto.demo_url && (
+                        <a 
+                          href={projeto.demo_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:opacity-80 transition-opacity"
+                          style={{ color: theme?.primary_color || undefined }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                      {projeto.github_url && (
+                        <a 
+                          href={projeto.github_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="hover:opacity-80 transition-opacity"
+                          style={{ color: theme?.primary_color || undefined }}
+                        >
+                          <Github className="h-4 w-4" />
+                        </a>
+                      )}
                     </div>
                   </CardTitle>
                   <CardDescription>{projeto.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-wrap gap-2">{projeto.technologies?.map((tech) => <Badge key={tech} variant="outline">{tech}</Badge>)}</div>
+                  {projeto.technologies && projeto.technologies.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {projeto.technologies.map((tech) => (
+                        <Badge 
+                          key={tech} 
+                          variant="outline"
+                          style={{ borderColor: theme?.primary_color ? `${theme.primary_color}40` : undefined }}
+                        >
+                          {tech}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Tecnologias não informadas</p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
           ))}
         </div>
+        
+        {projects.length === 0 && (
+          <Card className="bg-muted/50">
+            <CardContent className="py-16 text-center">
+              <FolderKanban className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground text-lg">Nenhum projeto cadastrado</p>
+              <p className="text-sm text-muted-foreground mt-2">Adicione projetos pelo painel administrativo</p>
+            </CardContent>
+          </Card>
+        )}
       </motion.div>
     </div>
   )
 }
 
-function SkillsSection({ skills, getCategoryIcon, getCategoryColor }: { skills: Skill[]; getCategoryIcon: (cat: string) => typeof Code; getCategoryColor: (cat: string) => string }) {
+function SkillsSection({ skills, getCategoryIcon, getCategoryColor, theme }: { skills: Skill[]; getCategoryIcon: (cat: string) => typeof Code; getCategoryColor: (cat: string) => string; theme: Theme | null }) {
   return (
     <div className="max-w-4xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <Wrench className="h-8 w-8 text-primary" />
+          <Wrench className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
           Minhas Skills
         </h2>
         
@@ -705,7 +832,10 @@ function SkillsSection({ skills, getCategoryIcon, getCategoryColor }: { skills: 
                 <Card className="hover:shadow-md transition-shadow">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`p-2.5 rounded-xl ${getCategoryColor(skill.category)} text-white shadow-lg`}>
+                      <div 
+                        className="p-2.5 rounded-xl text-white shadow-lg"
+                        style={{ backgroundColor: theme?.primary_color || getCategoryColor(skill.category) }}
+                      >
                         {skill.icon_url ? <img src={skill.icon_url} alt={skill.name} className="w-5 h-5" /> : <IconComponent className="h-5 w-5" />}
                       </div>
                       <div className="flex-1">
@@ -713,7 +843,7 @@ function SkillsSection({ skills, getCategoryIcon, getCategoryColor }: { skills: 
                         <span className="text-muted-foreground text-sm ml-2">{skill.level}%</span>
                       </div>
                     </div>
-                    <Progress value={skill.level} className="h-2" />
+                    <Progress value={skill.level} className="h-2" style={{ backgroundColor: theme?.primary_color ? `${theme.primary_color}30` : undefined }} />
                   </CardContent>
                 </Card>
               </motion.div>
@@ -725,19 +855,34 @@ function SkillsSection({ skills, getCategoryIcon, getCategoryColor }: { skills: 
   )
 }
 
-function ContactSection({ contacts, formulario, setFormulario, enviarFormulario, formEnviado, getSocialIcon }: { 
-  contacts: Contact[]; 
+function ContactSection({ contacts, profile, formulario, setFormulario, enviarFormulario, formEnviado, getSocialIcon, theme }: { 
+  contacts: Contact[];
+  profile: Profile | null;
   formulario: { nome: string; email: string; mensagem: string };
   setFormulario: React.Dispatch<React.SetStateAction<{ nome: string; email: string; mensagem: string }>>;
   enviarFormulario: (e: React.FormEvent) => void;
   formEnviado: boolean;
   getSocialIcon: (platform: string) => typeof Github;
+  theme: Theme | null;
 }) {
+  // Adicionar WhatsApp como contato se existir no profile
+  const allContacts = [
+    ...contacts,
+    ...(profile?.whatsapp ? [{
+      id: 'whatsapp',
+      platform: 'WhatsApp',
+      url: `https://wa.me/${profile.whatsapp.replace(/\D/g, '')}`,
+      username: profile.whatsapp,
+      visible: true,
+      order_index: 99
+    }] : [])
+  ]
+  
   return (
     <div className="max-w-xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <Phone className="h-8 w-8 text-primary" />
+          <Phone className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
           Contato
         </h2>
         
@@ -746,7 +891,9 @@ function ContactSection({ contacts, formulario, setFormulario, enviarFormulario,
             <AnimatePresence mode="wait">
               {formEnviado ? (
                 <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center py-8">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4"><CheckCircle className="h-8 w-8 text-emerald-500" /></div>
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20` }}>
+                    <CheckCircle className="h-8 w-8" style={{ color: theme?.primary_color || '#10b981' }} />
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">Mensagem Enviada!</h3>
                   <p className="text-muted-foreground">Responderei em breve!</p>
                 </motion.div>
@@ -755,7 +902,7 @@ function ContactSection({ contacts, formulario, setFormulario, enviarFormulario,
                   <div className="space-y-2"><label className="text-sm font-medium">Nome</label><Input placeholder="Seu nome" value={formulario.nome} onChange={(e) => setFormulario({...formulario, nome: e.target.value})} required /></div>
                   <div className="space-y-2"><label className="text-sm font-medium">Email</label><Input type="email" placeholder="seu@email.com" value={formulario.email} onChange={(e) => setFormulario({...formulario, email: e.target.value})} required /></div>
                   <div className="space-y-2"><label className="text-sm font-medium">Mensagem</label><Textarea placeholder="Sua mensagem..." value={formulario.mensagem} onChange={(e) => setFormulario({...formulario, mensagem: e.target.value})} rows={4} required /></div>
-                  <Button type="submit" className="w-full"><Send className="mr-2 h-4 w-4" />Enviar</Button>
+                  <Button type="submit" className="w-full" style={{ backgroundColor: theme?.primary_color || undefined }}><Send className="mr-2 h-4 w-4" />Enviar</Button>
                 </motion.form>
               )}
             </AnimatePresence>
@@ -764,11 +911,11 @@ function ContactSection({ contacts, formulario, setFormulario, enviarFormulario,
         
         <div className="mt-8">
           <p className="text-center text-muted-foreground mb-4">Ou me encontre nas redes</p>
-          <div className="flex justify-center gap-4">
-            {contacts.map((contact) => {
+          <div className="flex justify-center gap-3 flex-wrap">
+            {allContacts.map((contact) => {
               const IconComponent = getSocialIcon(contact.platform)
               return (
-                <Button key={contact.id} variant="outline" size="lg" asChild>
+                <Button key={contact.id} variant="outline" size="lg" asChild style={{ borderColor: theme?.primary_color ? `${theme.primary_color}50` : undefined }}>
                   <a href={contact.url} target="_blank" rel="noopener noreferrer" className="gap-2">
                     <IconComponent className="h-5 w-5" />
                     {contact.platform}
