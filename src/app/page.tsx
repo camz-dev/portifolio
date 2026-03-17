@@ -10,12 +10,12 @@ import {
   Github, Linkedin, Mail, ExternalLink, Code, Database, 
   Brain, Globe, Rocket, MessageCircle, Send, User, 
   Briefcase, GraduationCap, Heart, MapPin, Calendar,
-  Building2, School, Clock, CheckCircle, Home as HomeIcon, FolderKanban,
+  Building2, School, Clock, Home as HomeIcon, FolderKanban,
   Wrench, Phone, Menu, X, Sparkles, BookOpen, Image as ImageIcon,
-  MessageSquare
+  MessageSquare, ChevronUp, CheckCircle
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import ParticleBackground from "@/components/particle-background"
 import { ThemeToggle } from "@/components/theme/theme-provider"
 import { 
@@ -79,8 +79,8 @@ const navItems = [
 
 export default function PortfolioPage() {
   // Estados
-  const [currentSection, setCurrentSection] = useState('home')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState('home')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [hero, setHero] = useState<Hero | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
@@ -90,6 +90,7 @@ export default function PortfolioPage() {
   const [education, setEducation] = useState<Education[]>([])
   const [theme, setTheme] = useState<Theme | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   
   const [formulario, setFormulario] = useState({ nome: "", email: "", mensagem: "" })
   const [chatAberto, setChatAberto] = useState(false)
@@ -100,6 +101,9 @@ export default function PortfolioPage() {
   
   const [textoDigitado, setTextoDigitado] = useState("")
   const nomeCompleto = profile?.name || "Camile Pereira"
+  
+  // Refs for sections
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
 
   // Buscar dados
   useEffect(() => {
@@ -162,6 +166,31 @@ export default function PortfolioPage() {
     return () => clearInterval(interval)
   }, [nomeCompleto])
 
+  // Scroll spy - detect active section
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 100
+      
+      // Show/hide scroll to top button
+      setShowScrollTop(window.scrollY > 500)
+      
+      // Find active section
+      for (const item of navItems) {
+        const section = sectionRefs.current[item.id]
+        if (section) {
+          const { offsetTop, offsetHeight } = section
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(item.id)
+            break
+          }
+        }
+      }
+    }
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   // Chat
   const enviarMensagem = async () => {
     if (!inputChat.trim() || carregando) return
@@ -216,32 +245,25 @@ export default function PortfolioPage() {
     return radiusMap[theme.border_radius] || '0.5rem'
   }
 
-  // Navegação
-  const navigateTo = (section: string) => {
-    setCurrentSection(section)
-    setSidebarOpen(false)
+  // Scroll to section
+  const scrollToSection = (sectionId: string) => {
+    const section = sectionRefs.current[sectionId]
+    if (section) {
+      const headerOffset = 80
+      const elementPosition = section.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.scrollY - headerOffset
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
+    }
+    setMobileMenuOpen(false)
   }
 
-  // Renderizar seção atual
-  const renderSection = () => {
-    switch (currentSection) {
-      case 'home':
-        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} projects={projects} skills={skills} />
-      case 'about':
-        return <AboutSection profile={profile} theme={theme} />
-      case 'experience':
-        return <ExperienceSection experiences={experiences} formatDate={formatDate} theme={theme} />
-      case 'education':
-        return <EducationSection education={education} formatDate={formatDate} theme={theme} />
-      case 'projects':
-        return <ProjectsSection projects={projects} theme={theme} getThemeBorderRadius={getThemeBorderRadius} />
-      case 'skills':
-        return <SkillsSection skills={skills} getCategoryIcon={getCategoryIcon} getCategoryColor={getCategoryColor} theme={theme} />
-      case 'contact':
-        return <ContactSection contacts={contacts} profile={profile} formulario={formulario} setFormulario={setFormulario} enviarFormulario={enviarFormulario} formEnviado={formEnviado} getSocialIcon={getSocialIcon} theme={theme} />
-      default:
-        return <HomeSection hero={hero} profile={profile} textoDigitado={textoDigitado} navigateTo={navigateTo} theme={theme} projects={projects} skills={skills} />
-    }
+  // Scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   if (loading) {
@@ -256,132 +278,726 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background relative">
+    <div className="min-h-screen bg-background relative">
       <ParticleBackground quantidade={theme?.particle_effect === false ? 0 : 30} />
       
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
-        <div className="flex items-center justify-between px-4 py-3">
-          <motion.h1 className="text-lg font-bold">
-            <span className="text-primary">Dev</span>Portfolio
-          </motion.h1>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Sidebar */}
-      <AnimatePresence>
-        {(sidebarOpen || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
-          <motion.aside
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ type: 'spring', damping: 25 }}
-            className="fixed lg:static inset-y-0 left-0 z-40 w-64 bg-card/80 backdrop-blur-xl border-r border-border flex flex-col"
-          >
+      {/* Header Navigation */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="p-6 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'})`
-                  }}
-                >
-                  <Code className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="font-bold text-lg"><span className="text-primary">Dev</span>Portfolio</h1>
-                  <p className="text-xs text-muted-foreground">{profile?.name || 'Desenvolvedor'}</p>
-                </div>
+            <motion.div 
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => scrollToSection('home')}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div 
+                className="w-9 h-9 rounded-lg flex items-center justify-center"
+                style={{ 
+                  background: `linear-gradient(135deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'})`
+                }}
+              >
+                <Code className="w-4 h-4 text-white" />
               </div>
-            </div>
+              <span className="font-bold text-lg hidden sm:block">
+                <span className="text-primary" style={{ color: theme?.primary_color }}>Dev</span>Portfolio
+              </span>
+            </motion.div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-1">
               {navItems.map((item) => {
                 const Icon = item.icon
-                const isActive = currentSection === item.id
+                const isActive = activeSection === item.id
                 return (
                   <button
                     key={item.id}
-                    onClick={() => navigateTo(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    onClick={() => scrollToSection(item.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium ${
                       isActive 
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
-                        : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                        ? 'text-primary-foreground shadow-lg' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                     style={isActive ? { backgroundColor: theme?.primary_color || undefined } : {}}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
                   </button>
                 )
               })}
             </nav>
 
-            {/* Footer */}
-            <div className="p-4 border-t border-border space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Tema</span>
-                <ThemeToggle />
-              </div>
-              <div className="flex gap-2 justify-center flex-wrap">
-                {contacts.slice(0, 4).map((contact) => {
-                  const IconComponent = getSocialIcon(contact.platform)
+            {/* Right side */}
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              
+              {/* Mobile menu button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden border-t border-border bg-background/95 backdrop-blur-xl"
+            >
+              <nav className="max-w-7xl mx-auto px-4 py-3 grid grid-cols-2 gap-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon
+                  const isActive = activeSection === item.id
                   return (
-                    <a
-                      key={contact.id}
-                      href={contact.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+                    <button
+                      key={item.id}
+                      onClick={() => scrollToSection(item.id)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium ${
+                        isActive 
+                          ? 'text-primary-foreground shadow-lg' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                      style={isActive ? { backgroundColor: theme?.primary_color || undefined } : {}}
                     >
-                      <IconComponent className="w-4 h-4" />
-                    </a>
+                      <Icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  )
+                })}
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* Main Content */}
+      <main className="pt-16">
+        {/* Home Section */}
+        <section 
+          ref={(el) => { sectionRefs.current['home'] = el }}
+          id="home"
+          className="min-h-screen flex items-center justify-center px-4 py-20"
+        >
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Avatar */}
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }} className="relative mb-8 inline-block">
+              <div 
+                className="absolute inset-0 rounded-full blur-md opacity-60 animate-pulse"
+                style={{ background: `linear-gradient(90deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'}, ${theme?.accent_color || '#06b6d4'})` }}
+              />
+              <div 
+                className="relative w-32 h-32 rounded-full flex items-center justify-center border-glow overflow-hidden"
+                style={{ background: `linear-gradient(135deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'})` }}
+              >
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl font-bold text-white">{profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'CP'}</span>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Title */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+              <h1 className="text-4xl lg:text-5xl font-bold mb-4">
+                {hero?.title?.split(profile?.name || 'Camile Pereira')[0] || 'Olá, eu sou '}
+                <span style={{ color: theme?.primary_color || '#10b981' }}>{textoDigitado}<span className="animate-pulse">|</span></span>
+              </h1>
+              <p className="text-xl lg:text-2xl text-muted-foreground">{hero?.subtitle || profile?.title}</p>
+            </motion.div>
+
+            {/* Description */}
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="max-w-2xl text-muted-foreground mt-6 text-lg mx-auto">
+              {hero?.description || profile?.bio}
+            </motion.p>
+
+            {/* Availability */}
+            {profile?.availability && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center justify-center gap-2 mt-6">
+                <span 
+                  className={`w-3 h-3 rounded-full animate-pulse`}
+                  style={{ backgroundColor: profile.availability === 'available' ? (theme?.primary_color || '#10b981') : profile.availability === 'busy' ? '#eab308' : '#ef4444' }}
+                />
+                <span className="text-muted-foreground">
+                  {profile.availability === 'available' ? 'Disponível para projetos' : profile.availability === 'busy' ? 'Ocupado no momento' : 'Indisponível'}
+                </span>
+              </motion.div>
+            )}
+
+            {/* CTA Buttons */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex gap-4 mt-8 justify-center">
+              <Button 
+                size="lg" 
+                onClick={() => scrollToSection(hero?.cta_url || 'projects')}
+                style={{ backgroundColor: theme?.primary_color || undefined }}
+              >
+                <Sparkles className="mr-2 h-5 w-5" />
+                {hero?.cta_text || 'Ver Projetos'}
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => scrollToSection(hero?.secondary_cta_url || 'contact')}
+                style={{ borderColor: theme?.primary_color || undefined, color: theme?.primary_color || undefined }}
+              >
+                <Mail className="mr-2 h-5 w-5" />
+                {hero?.secondary_cta_text || 'Contato'}
+              </Button>
+            </motion.div>
+
+            {/* Quick Stats */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="grid grid-cols-3 gap-6 mt-12 max-w-lg mx-auto">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{profile?.years_experience || '2'}+</p>
+                <p className="text-sm text-muted-foreground">Anos Estudando</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{projects?.length || 10}+</p>
+                <p className="text-sm text-muted-foreground">Projetos</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{skills?.length || 6}+</p>
+                <p className="text-sm text-muted-foreground">Tecnologias</p>
+              </div>
+            </motion.div>
+
+            {/* Scroll indicator */}
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ delay: 1.5 }}
+              className="mt-16"
+            >
+              <button 
+                onClick={() => scrollToSection('about')}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-sm">Role para baixo</span>
+                  <div className="w-6 h-10 border-2 border-current rounded-full flex items-start justify-center p-1">
+                    <motion.div
+                      animate={{ y: [0, 12, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="w-1.5 h-3 bg-current rounded-full"
+                    />
+                  </div>
+                </div>
+              </button>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* About Section */}
+        <section 
+          ref={(el) => { sectionRefs.current['about'] = el }}
+          id="about"
+          className="py-20 px-4"
+        >
+          <div className="max-w-4xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                <User className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
+                Sobre Mim
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                      Quem sou
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-muted-foreground">
+                    <p>{profile?.bio}</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                      Localização
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-muted-foreground">
+                    <p className="flex items-center gap-2">📍 {profile?.location || 'Brasil'}</p>
+                    <p className="flex items-center gap-2 mt-2">💼 {profile?.years_experience || 2} anos de experiência</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Phone className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                      Contato
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-muted-foreground space-y-2">
+                    {profile?.email && <p className="flex items-center gap-2">📧 {profile.email}</p>}
+                    {profile?.whatsapp && <p className="flex items-center gap-2">📱 WhatsApp: {profile.whatsapp}</p>}
+                    {profile?.phone && <p className="flex items-center gap-2">📞 {profile.phone}</p>}
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Heart className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                      Interesses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary">Frontend</Badge>
+                      <Badge variant="secondary">Backend</Badge>
+                      <Badge variant="secondary">IA</Badge>
+                      <Badge variant="secondary">Banco de Dados</Badge>
+                      <Badge variant="secondary">Mobile</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Experience Section */}
+        <section 
+          ref={(el) => { sectionRefs.current['experience'] = el }}
+          id="experience"
+          className="py-20 px-4 bg-muted/30"
+        >
+          <div className="max-w-4xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                <Briefcase className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
+                Experiências
+              </h2>
+              
+              {experiences.length > 0 ? (
+                <div className="space-y-6">
+                  {experiences.map((exp, index) => (
+                    <motion.div key={exp.id} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}>
+                      <Card className="relative pl-8 ml-4" style={{ borderLeftColor: theme?.primary_color || undefined, borderLeftWidth: 2 }}>
+                        <div className="absolute left-0 top-6 w-3 h-3 rounded-full -translate-x-[7px]" style={{ backgroundColor: theme?.primary_color || '#10b981' }} />
+                        <CardHeader>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <CardTitle className="flex items-center gap-2">
+                                <Building2 className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
+                                {exp.position}
+                              </CardTitle>
+                              <CardDescription className="text-lg font-medium text-foreground mt-1">{exp.company}</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              {formatDate(exp.start_date)} - {exp.current ? 'Presente' : exp.end_date ? formatDate(exp.end_date) : ''}
+                              {exp.current && <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>Atual</Badge>}
+                            </div>
+                          </div>
+                          {exp.location && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1"><MapPin className="w-3 h-3" />{exp.location}</p>}
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-muted-foreground mb-4">{exp.description}</p>
+                          {exp.technologies && exp.technologies.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {exp.technologies.map((tech) => <Badge key={tech} variant="outline">{tech}</Badge>)}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <Card className="bg-muted/50">
+                  <CardContent className="py-16 text-center">
+                    <Briefcase className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground text-lg">Nenhuma experiência cadastrada</p>
+                    <p className="text-sm text-muted-foreground mt-2">Adicione experiências pelo painel administrativo</p>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Education Section */}
+        <section 
+          ref={(el) => { sectionRefs.current['education'] = el }}
+          id="education"
+          className="py-20 px-4"
+        >
+          <div className="max-w-4xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                <GraduationCap className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
+                Educação
+              </h2>
+              
+              {education.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {education.map((edu, index) => (
+                    <motion.div key={edu.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}>
+                      <Card className="h-full">
+                        <CardHeader>
+                          <div className="flex items-start gap-4">
+                            {edu.logo_url ? (
+                              <img src={edu.logo_url} alt={edu.institution} className="w-12 h-12 rounded-lg object-contain bg-muted p-2" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20` }}>
+                                <School className="w-6 h-6" style={{ color: theme?.primary_color || undefined }} />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">{edu.degree}</CardTitle>
+                              <CardDescription>{edu.field}</CardDescription>
+                              <p className="text-sm font-medium mt-1">{edu.institution}</p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <Clock className="w-4 h-4" />
+                            {formatDate(edu.start_date)} - {edu.current ? 'Presente' : edu.end_date ? formatDate(edu.end_date) : ''}
+                            {edu.current && <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>Cursando</Badge>}
+                          </div>
+                          {edu.description && <p className="text-sm text-muted-foreground">{edu.description}</p>}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <Card className="bg-muted/50">
+                  <CardContent className="py-16 text-center">
+                    <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground text-lg">Nenhuma formação cadastrada</p>
+                    <p className="text-sm text-muted-foreground mt-2">Adicione formações pelo painel administrativo</p>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Projects Section */}
+        <section 
+          ref={(el) => { sectionRefs.current['projects'] = el }}
+          id="projects"
+          className="py-20 px-4 bg-muted/30"
+        >
+          <div className="max-w-5xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                <FolderKanban className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
+                Meus Projetos
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                {projects.map((projeto, index) => (
+                  <motion.div key={projeto.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}>
+                    <Card className="h-full hover:shadow-lg transition-all group overflow-hidden" style={{ borderRadius: getThemeBorderRadius() }}>
+                      {projeto.image_url ? (
+                        <div className="aspect-video bg-muted overflow-hidden">
+                          <img src={projeto.image_url} alt={projeto.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </div>
+                      ) : (
+                        <div className="aspect-video bg-muted flex items-center justify-center">
+                          <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
+                        </div>
+                      )}
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          {projeto.title}
+                          <div className="flex gap-2">
+                            {projeto.demo_url && (
+                              <a 
+                                href={projeto.demo_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="hover:opacity-80 transition-opacity"
+                                style={{ color: theme?.primary_color || undefined }}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            )}
+                            {projeto.github_url && (
+                              <a 
+                                href={projeto.github_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="hover:opacity-80 transition-opacity"
+                                style={{ color: theme?.primary_color || undefined }}
+                              >
+                                <Github className="h-4 w-4" />
+                              </a>
+                            )}
+                          </div>
+                        </CardTitle>
+                        <CardDescription>{projeto.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {projeto.technologies && projeto.technologies.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {projeto.technologies.map((tech) => (
+                              <Badge 
+                                key={tech} 
+                                variant="outline"
+                                style={{ borderColor: theme?.primary_color ? `${theme.primary_color}40` : undefined }}
+                              >
+                                {tech}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">Tecnologias não informadas</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+              
+              {projects.length === 0 && (
+                <Card className="bg-muted/50">
+                  <CardContent className="py-16 text-center">
+                    <FolderKanban className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground text-lg">Nenhum projeto cadastrado</p>
+                    <p className="text-sm text-muted-foreground mt-2">Adicione projetos pelo painel administrativo</p>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Skills Section */}
+        <section 
+          ref={(el) => { sectionRefs.current['skills'] = el }}
+          id="skills"
+          className="py-20 px-4"
+        >
+          <div className="max-w-4xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                <Wrench className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
+                Minhas Skills
+              </h2>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {skills.map((skill, index) => {
+                  const IconComponent = getCategoryIcon(skill.category)
+                  return (
+                    <motion.div key={skill.id} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: index * 0.05 }}>
+                      <Card className="hover:shadow-md transition-shadow">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div 
+                              className="p-2.5 rounded-xl text-white shadow-lg"
+                              style={{ backgroundColor: theme?.primary_color || getCategoryColor(skill.category) }}
+                            >
+                              {skill.icon_url ? <img src={skill.icon_url} alt={skill.name} className="w-5 h-5" /> : <IconComponent className="h-5 w-5" />}
+                            </div>
+                            <div className="flex-1">
+                              <span className="font-medium">{skill.name}</span>
+                              <span className="text-xs text-muted-foreground ml-2">{skill.level}%</span>
+                            </div>
+                          </div>
+                          <Progress value={skill.level} className="h-2" style={{ 
+                            // @ts-ignore
+                            '--progress-background': theme?.primary_color || undefined 
+                          }} />
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   )
                 })}
               </div>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Overlay mobile */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden fixed inset-0 bg-black/50 z-30"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-0 pt-16 lg:pt-0 overflow-y-auto">
-        <div className="min-h-screen">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSection}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 lg:p-8"
-            >
-              {renderSection()}
             </motion.div>
-          </AnimatePresence>
-        </div>
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <section 
+          ref={(el) => { sectionRefs.current['contact'] = el }}
+          id="contact"
+          className="py-20 px-4 bg-muted/30"
+        >
+          <div className="max-w-4xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                <Phone className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
+                Contato
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Redes Sociais</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-3">
+                        {contacts.map((contact) => {
+                          const IconComponent = getSocialIcon(contact.platform)
+                          return (
+                            <a
+                              key={contact.id}
+                              href={contact.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
+                              style={{ 
+                                ':hover': { backgroundColor: theme?.primary_color || undefined }
+                              }}
+                            >
+                              <IconComponent className="w-5 h-5" />
+                            </a>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Informações</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {profile?.email && (
+                        <a href={`mailto:${profile.email}`} className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
+                          <Mail className="w-5 h-5" style={{ color: theme?.primary_color || undefined }} />
+                          {profile.email}
+                        </a>
+                      )}
+                      {profile?.whatsapp && (
+                        <a href={`https://wa.me/${profile.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
+                          <MessageSquare className="w-5 h-5" style={{ color: theme?.primary_color || undefined }} />
+                          {profile.whatsapp}
+                        </a>
+                      )}
+                      {profile?.phone && (
+                        <a href={`tel:${profile.phone}`} className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors">
+                          <Phone className="w-5 h-5" style={{ color: theme?.primary_color || undefined }} />
+                          {profile.phone}
+                        </a>
+                      )}
+                      {profile?.location && (
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                          <MapPin className="w-5 h-5" style={{ color: theme?.primary_color || undefined }} />
+                          {profile.location}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Envie uma mensagem</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={enviarFormulario} className="space-y-4">
+                      <div>
+                        <Input 
+                          placeholder="Seu nome" 
+                          value={formulario.nome}
+                          onChange={(e) => setFormulario({...formulario, nome: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Input 
+                          type="email"
+                          placeholder="Seu email" 
+                          value={formulario.email}
+                          onChange={(e) => setFormulario({...formulario, email: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Textarea 
+                          placeholder="Sua mensagem" 
+                          value={formulario.mensagem}
+                          onChange={(e) => setFormulario({...formulario, mensagem: e.target.value})}
+                          required
+                          rows={4}
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full"
+                        style={{ backgroundColor: theme?.primary_color || undefined }}
+                      >
+                        {formEnviado ? (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Enviado!
+                          </>
+                        ) : (
+                          <>
+                            <Send className="mr-2 h-4 w-4" />
+                            Enviar Mensagem
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-8 px-4 border-t border-border">
+          <div className="max-w-4xl mx-auto text-center text-muted-foreground text-sm">
+            <p>© {new Date().getFullYear()} {profile?.name || 'DevPortfolio'}. Todos os direitos reservados.</p>
+            <div className="flex justify-center gap-4 mt-4">
+              {contacts.slice(0, 4).map((contact) => {
+                const IconComponent = getSocialIcon(contact.platform)
+                return (
+                  <a
+                    key={contact.id}
+                    href={contact.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    <IconComponent className="w-5 h-5" />
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </footer>
       </main>
+
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={scrollToTop}
+            className="fixed bottom-24 right-6 w-12 h-12 rounded-full shadow-lg z-40 flex items-center justify-center bg-background border border-border hover:bg-muted transition-colors"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Chat Button */}
       <Button
@@ -443,489 +1059,6 @@ export default function PortfolioPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  )
-}
-
-// ============================================
-// SECTIONS
-// ============================================
-
-function HomeSection({ hero, profile, textoDigitado, navigateTo, theme, projects, skills }: { hero: Hero | null; profile: Profile | null; textoDigitado: string; navigateTo: (section: string) => void; theme: Theme | null; projects: Project[]; skills: Skill[] }) {
-  return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex flex-col items-center text-center py-12 lg:py-20">
-        {/* Avatar */}
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }} className="relative mb-8">
-          <div 
-            className="absolute inset-0 rounded-full blur-md opacity-60 animate-pulse"
-            style={{ background: `linear-gradient(90deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'}, ${theme?.accent_color || '#06b6d4'})` }}
-          />
-          <div 
-            className="relative w-32 h-32 rounded-full flex items-center justify-center border-glow overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${theme?.primary_color || '#10b981'}, ${theme?.secondary_color || '#14b8a6'})` }}
-          >
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-4xl font-bold text-white">{profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'CP'}</span>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Title */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <h1 className="text-4xl lg:text-5xl font-bold mb-4">
-            {hero?.title?.split(profile?.name || 'Camile Pereira')[0] || 'Olá, eu sou '}
-            <span style={{ color: theme?.primary_color || '#10b981' }}>{textoDigitado}<span className="animate-pulse">|</span></span>
-          </h1>
-          <p className="text-xl lg:text-2xl text-muted-foreground">{hero?.subtitle || profile?.title}</p>
-        </motion.div>
-
-        {/* Description */}
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="max-w-2xl text-muted-foreground mt-6 text-lg">
-          {hero?.description || profile?.bio}
-        </motion.p>
-
-        {/* Availability */}
-        {profile?.availability && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-2 mt-6">
-            <span 
-              className={`w-3 h-3 rounded-full animate-pulse`}
-              style={{ backgroundColor: profile.availability === 'available' ? (theme?.primary_color || '#10b981') : profile.availability === 'busy' ? '#eab308' : '#ef4444' }}
-            />
-            <span className="text-muted-foreground">
-              {profile.availability === 'available' ? 'Disponível para projetos' : profile.availability === 'busy' ? 'Ocupado no momento' : 'Indisponível'}
-            </span>
-          </motion.div>
-        )}
-
-        {/* CTA Buttons */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex gap-4 mt-8">
-          <Button 
-            size="lg" 
-            onClick={() => navigateTo(hero?.cta_url || 'projects')}
-            style={{ backgroundColor: theme?.primary_color || undefined }}
-          >
-            <Sparkles className="mr-2 h-5 w-5" />
-            {hero?.cta_text || 'Ver Projetos'}
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            onClick={() => navigateTo(hero?.secondary_cta_url || 'contact')}
-            style={{ borderColor: theme?.primary_color || undefined, color: theme?.primary_color || undefined }}
-          >
-            <Mail className="mr-2 h-5 w-5" />
-            {hero?.secondary_cta_text || 'Contato'}
-          </Button>
-        </motion.div>
-
-        {/* Quick Stats */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="grid grid-cols-3 gap-6 mt-12">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{profile?.years_experience || '2'}+</p>
-            <p className="text-sm text-muted-foreground">Anos Estudando</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{projects?.length || 10}+</p>
-            <p className="text-sm text-muted-foreground">Projetos</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{skills?.length || 6}+</p>
-            <p className="text-sm text-muted-foreground">Tecnologias</p>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  )
-}
-
-function AboutSection({ profile, theme }: { profile: Profile | null; theme: Theme | null }) {
-  return (
-    <div className="max-w-4xl mx-auto">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <User className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
-          Sobre Mim
-        </h2>
-        
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
-                Quem sou
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-muted-foreground">
-              <p>{profile?.bio}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
-                Localização
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-muted-foreground">
-              <p className="flex items-center gap-2">📍 {profile?.location || 'Brasil'}</p>
-              <p className="flex items-center gap-2 mt-2">💼 {profile?.years_experience || 2} anos de experiência</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
-                Contato
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-muted-foreground space-y-2">
-              {profile?.email && <p className="flex items-center gap-2">📧 {profile.email}</p>}
-              {profile?.whatsapp && <p className="flex items-center gap-2">📱 WhatsApp: {profile.whatsapp}</p>}
-              {profile?.phone && <p className="flex items-center gap-2">📞 {profile.phone}</p>}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Heart className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
-                Interesses
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Frontend</Badge>
-                <Badge variant="secondary">Backend</Badge>
-                <Badge variant="secondary">IA</Badge>
-                <Badge variant="secondary">Banco de Dados</Badge>
-                <Badge variant="secondary">Mobile</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-function ExperienceSection({ experiences, formatDate, theme }: { experiences: Experience[]; formatDate: (date: string) => string; theme: Theme | null }) {
-  return (
-    <div className="max-w-4xl mx-auto">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <Briefcase className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
-          Experiências
-        </h2>
-        
-        {experiences.length > 0 ? (
-          <div className="space-y-6">
-            {experiences.map((exp, index) => (
-              <motion.div key={exp.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}>
-                <Card className="relative pl-8 ml-4" style={{ borderLeftColor: theme?.primary_color || undefined, borderLeftWidth: 2 }}>
-                  <div className="absolute left-0 top-6 w-3 h-3 rounded-full -translate-x-[7px]" style={{ backgroundColor: theme?.primary_color || '#10b981' }} />
-                  <CardHeader>
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <Building2 className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
-                          {exp.position}
-                        </CardTitle>
-                        <CardDescription className="text-lg font-medium text-foreground mt-1">{exp.company}</CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(exp.start_date)} - {exp.current ? 'Presente' : exp.end_date ? formatDate(exp.end_date) : ''}
-                        {exp.current && <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>Atual</Badge>}
-                      </div>
-                    </div>
-                    {exp.location && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1"><MapPin className="w-3 h-3" />{exp.location}</p>}
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">{exp.description}</p>
-                    {exp.technologies && exp.technologies.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {exp.technologies.map((tech) => <Badge key={tech} variant="outline">{tech}</Badge>)}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <Card className="bg-muted/50">
-            <CardContent className="py-16 text-center">
-              <Briefcase className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-lg">Nenhuma experiência cadastrada</p>
-              <p className="text-sm text-muted-foreground mt-2">Adicione experiências pelo painel administrativo</p>
-            </CardContent>
-          </Card>
-        )}
-      </motion.div>
-    </div>
-  )
-}
-
-function EducationSection({ education, formatDate, theme }: { education: Education[]; formatDate: (date: string) => string; theme: Theme | null }) {
-  return (
-    <div className="max-w-4xl mx-auto">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <GraduationCap className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
-          Educação
-        </h2>
-        
-        {education.length > 0 ? (
-          <div className="grid md:grid-cols-2 gap-6">
-            {education.map((edu, index) => (
-              <motion.div key={edu.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-                <Card className="h-full">
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      {edu.logo_url ? (
-                        <img src={edu.logo_url} alt={edu.institution} className="w-12 h-12 rounded-lg object-contain bg-muted p-2" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20` }}>
-                          <School className="w-6 h-6" style={{ color: theme?.primary_color || undefined }} />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{edu.degree}</CardTitle>
-                        <CardDescription>{edu.field}</CardDescription>
-                        <p className="text-sm font-medium mt-1">{edu.institution}</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <Clock className="w-4 h-4" />
-                      {formatDate(edu.start_date)} - {edu.current ? 'Presente' : edu.end_date ? formatDate(edu.end_date) : ''}
-                      {edu.current && <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>Cursando</Badge>}
-                    </div>
-                    {edu.description && <p className="text-sm text-muted-foreground">{edu.description}</p>}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <Card className="bg-muted/50">
-            <CardContent className="py-16 text-center">
-              <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-lg">Nenhuma formação cadastrada</p>
-              <p className="text-sm text-muted-foreground mt-2">Adicione formações pelo painel administrativo</p>
-            </CardContent>
-          </Card>
-        )}
-      </motion.div>
-    </div>
-  )
-}
-
-function ProjectsSection({ projects, theme, getThemeBorderRadius }: { projects: Project[]; theme: Theme | null; getThemeBorderRadius: () => string }) {
-  return (
-    <div className="max-w-5xl mx-auto">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <FolderKanban className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
-          Meus Projetos
-        </h2>
-        
-        <div className="grid md:grid-cols-2 gap-6">
-          {projects.map((projeto, index) => (
-            <motion.div key={projeto.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-              <Card className="h-full hover:shadow-lg transition-all group overflow-hidden" style={{ borderRadius: getThemeBorderRadius() }}>
-                {projeto.image_url ? (
-                  <div className="aspect-video bg-muted overflow-hidden">
-                    <img src={projeto.image_url} alt={projeto.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  </div>
-                ) : (
-                  <div className="aspect-video bg-muted flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    {projeto.title}
-                    <div className="flex gap-2">
-                      {projeto.demo_url && (
-                        <a 
-                          href={projeto.demo_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="hover:opacity-80 transition-opacity"
-                          style={{ color: theme?.primary_color || undefined }}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      )}
-                      {projeto.github_url && (
-                        <a 
-                          href={projeto.github_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="hover:opacity-80 transition-opacity"
-                          style={{ color: theme?.primary_color || undefined }}
-                        >
-                          <Github className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                  </CardTitle>
-                  <CardDescription>{projeto.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {projeto.technologies && projeto.technologies.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {projeto.technologies.map((tech) => (
-                        <Badge 
-                          key={tech} 
-                          variant="outline"
-                          style={{ borderColor: theme?.primary_color ? `${theme.primary_color}40` : undefined }}
-                        >
-                          {tech}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Tecnologias não informadas</p>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-        
-        {projects.length === 0 && (
-          <Card className="bg-muted/50">
-            <CardContent className="py-16 text-center">
-              <FolderKanban className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-lg">Nenhum projeto cadastrado</p>
-              <p className="text-sm text-muted-foreground mt-2">Adicione projetos pelo painel administrativo</p>
-            </CardContent>
-          </Card>
-        )}
-      </motion.div>
-    </div>
-  )
-}
-
-function SkillsSection({ skills, getCategoryIcon, getCategoryColor, theme }: { skills: Skill[]; getCategoryIcon: (cat: string) => typeof Code; getCategoryColor: (cat: string) => string; theme: Theme | null }) {
-  return (
-    <div className="max-w-4xl mx-auto">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <Wrench className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
-          Minhas Skills
-        </h2>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {skills.map((skill, index) => {
-            const IconComponent = getCategoryIcon(skill.category)
-            return (
-              <motion.div key={skill.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.05 }}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div 
-                        className="p-2.5 rounded-xl text-white shadow-lg"
-                        style={{ backgroundColor: theme?.primary_color || getCategoryColor(skill.category) }}
-                      >
-                        {skill.icon_url ? <img src={skill.icon_url} alt={skill.name} className="w-5 h-5" /> : <IconComponent className="h-5 w-5" />}
-                      </div>
-                      <div className="flex-1">
-                        <span className="font-medium">{skill.name}</span>
-                        <span className="text-muted-foreground text-sm ml-2">{skill.level}%</span>
-                      </div>
-                    </div>
-                    <Progress value={skill.level} className="h-2" style={{ backgroundColor: theme?.primary_color ? `${theme.primary_color}30` : undefined }} />
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-function ContactSection({ contacts, profile, formulario, setFormulario, enviarFormulario, formEnviado, getSocialIcon, theme }: { 
-  contacts: Contact[];
-  profile: Profile | null;
-  formulario: { nome: string; email: string; mensagem: string };
-  setFormulario: React.Dispatch<React.SetStateAction<{ nome: string; email: string; mensagem: string }>>;
-  enviarFormulario: (e: React.FormEvent) => void;
-  formEnviado: boolean;
-  getSocialIcon: (platform: string) => typeof Github;
-  theme: Theme | null;
-}) {
-  // Adicionar WhatsApp como contato se existir no profile
-  const allContacts = [
-    ...contacts,
-    ...(profile?.whatsapp ? [{
-      id: 'whatsapp',
-      platform: 'WhatsApp',
-      url: `https://wa.me/${profile.whatsapp.replace(/\D/g, '')}`,
-      username: profile.whatsapp,
-      visible: true,
-      order_index: 99
-    }] : [])
-  ]
-  
-  return (
-    <div className="max-w-xl mx-auto">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-          <Phone className="h-8 w-8" style={{ color: theme?.primary_color || undefined }} />
-          Contato
-        </h2>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <AnimatePresence mode="wait">
-              {formEnviado ? (
-                <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-center py-8">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20` }}>
-                    <CheckCircle className="h-8 w-8" style={{ color: theme?.primary_color || '#10b981' }} />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">Mensagem Enviada!</h3>
-                  <p className="text-muted-foreground">Responderei em breve!</p>
-                </motion.div>
-              ) : (
-                <motion.form key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={enviarFormulario} className="space-y-4">
-                  <div className="space-y-2"><label className="text-sm font-medium">Nome</label><Input placeholder="Seu nome" value={formulario.nome} onChange={(e) => setFormulario({...formulario, nome: e.target.value})} required /></div>
-                  <div className="space-y-2"><label className="text-sm font-medium">Email</label><Input type="email" placeholder="seu@email.com" value={formulario.email} onChange={(e) => setFormulario({...formulario, email: e.target.value})} required /></div>
-                  <div className="space-y-2"><label className="text-sm font-medium">Mensagem</label><Textarea placeholder="Sua mensagem..." value={formulario.mensagem} onChange={(e) => setFormulario({...formulario, mensagem: e.target.value})} rows={4} required /></div>
-                  <Button type="submit" className="w-full" style={{ backgroundColor: theme?.primary_color || undefined }}><Send className="mr-2 h-4 w-4" />Enviar</Button>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </CardContent>
-        </Card>
-        
-        <div className="mt-8">
-          <p className="text-center text-muted-foreground mb-4">Ou me encontre nas redes</p>
-          <div className="flex justify-center gap-3 flex-wrap">
-            {allContacts.map((contact) => {
-              const IconComponent = getSocialIcon(contact.platform)
-              return (
-                <Button key={contact.id} variant="outline" size="lg" asChild style={{ borderColor: theme?.primary_color ? `${theme.primary_color}50` : undefined }}>
-                  <a href={contact.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                    <IconComponent className="h-5 w-5" />
-                    {contact.platform}
-                  </a>
-                </Button>
-              )
-            })}
-          </div>
-        </div>
-      </motion.div>
     </div>
   )
 }
