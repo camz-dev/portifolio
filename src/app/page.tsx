@@ -12,7 +12,7 @@ import {
   Briefcase, GraduationCap, Heart, MapPin, Calendar,
   Building2, School, Clock, Home as HomeIcon, FolderKanban,
   Wrench, Phone, Menu, X, Sparkles, BookOpen, Image as ImageIcon,
-  MessageSquare, ChevronUp, CheckCircle
+  MessageSquare, ChevronUp, CheckCircle, ChevronDown, ChevronRight
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useRef } from "react"
@@ -98,6 +98,7 @@ export default function PortfolioPage() {
   const [inputChat, setInputChat] = useState("")
   const [carregando, setCarregando] = useState(false)
   const [formEnviado, setFormEnviado] = useState(false)
+  const [expandedExperiences, setExpandedExperiences] = useState<Set<string>>(new Set())
   
   const [textoDigitado, setTextoDigitado] = useState("")
   const nomeCompleto = profile?.name || "Camile Pereira"
@@ -282,9 +283,9 @@ export default function PortfolioPage() {
       <ParticleBackground quantidade={theme?.particle_effect === false ? 0 : 30} />
       
       {/* Header Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-background via-background/95 to-transparent">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-16 backdrop-blur-sm bg-background/60 rounded-b-2xl px-4 mx-2 border border-border/50 border-t-0">
             {/* Logo */}
             <motion.div 
               className="flex items-center gap-3 cursor-pointer"
@@ -469,30 +470,6 @@ export default function PortfolioPage() {
                 <p className="text-sm text-muted-foreground">Tecnologias</p>
               </div>
             </motion.div>
-
-            {/* Scroll indicator */}
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              transition={{ delay: 1.5 }}
-              className="mt-16"
-            >
-              <button 
-                onClick={() => scrollToSection('about')}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-sm">Role para baixo</span>
-                  <div className="w-6 h-10 border-2 border-current rounded-full flex items-start justify-center p-1">
-                    <motion.div
-                      animate={{ y: [0, 12, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      className="w-1.5 h-3 bg-current rounded-full"
-                    />
-                  </div>
-                </div>
-              </button>
-            </motion.div>
           </div>
         </section>
 
@@ -585,39 +562,101 @@ export default function PortfolioPage() {
               </h2>
               
               {experiences.length > 0 ? (
-                <div className="space-y-6">
-                  {experiences.map((exp, index) => (
-                    <motion.div key={exp.id} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}>
-                      <Card className="relative pl-8 ml-4" style={{ borderLeftColor: theme?.primary_color || undefined, borderLeftWidth: 2 }}>
-                        <div className="absolute left-0 top-6 w-3 h-3 rounded-full -translate-x-[7px]" style={{ backgroundColor: theme?.primary_color || '#10b981' }} />
-                        <CardHeader>
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div>
-                              <CardTitle className="flex items-center gap-2">
-                                <Building2 className="h-5 w-5" style={{ color: theme?.primary_color || undefined }} />
-                                {exp.position}
-                              </CardTitle>
-                              <CardDescription className="text-lg font-medium text-foreground mt-1">{exp.company}</CardDescription>
+                <div className="space-y-4">
+                  {experiences.map((exp, index) => {
+                    const isExpanded = expandedExperiences.has(exp.id)
+                    return (
+                      <motion.div 
+                        key={exp.id} 
+                        initial={{ opacity: 0, y: 20 }} 
+                        whileInView={{ opacity: 1, y: 0 }} 
+                        viewport={{ once: true }} 
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card 
+                          className="overflow-hidden transition-all duration-300 hover:shadow-lg cursor-pointer"
+                          onClick={() => {
+                            const newExpanded = new Set(expandedExperiences)
+                            if (isExpanded) {
+                              newExpanded.delete(exp.id)
+                            } else {
+                              newExpanded.add(exp.id)
+                            }
+                            setExpandedExperiences(newExpanded)
+                          }}
+                        >
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Building2 className="h-5 w-5 flex-shrink-0" style={{ color: theme?.primary_color || undefined }} />
+                                  <CardTitle className="text-lg truncate">{exp.position}</CardTitle>
+                                </div>
+                                <CardDescription className="text-base font-medium text-foreground">
+                                  {exp.company}
+                                </CardDescription>
+                              </div>
+                              <div className="flex items-center gap-3 flex-shrink-0">
+                                <div className="text-right">
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>{formatDate(exp.start_date)} - {exp.current ? 'Presente' : exp.end_date ? formatDate(exp.end_date) : ''}</span>
+                                  </div>
+                                  {exp.location && (
+                                    <p className="text-xs text-muted-foreground mt-1 flex items-center justify-end gap-1">
+                                      <MapPin className="w-3 h-3" />{exp.location}
+                                    </p>
+                                  )}
+                                </div>
+                                {exp.current && (
+                                  <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>
+                                    Atual
+                                  </Badge>
+                                )}
+                                <motion.div
+                                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="p-1"
+                                >
+                                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                                </motion.div>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Calendar className="w-4 h-4" />
-                              {formatDate(exp.start_date)} - {exp.current ? 'Presente' : exp.end_date ? formatDate(exp.end_date) : ''}
-                              {exp.current && <Badge style={{ backgroundColor: `${theme?.primary_color || '#10b981'}20`, color: theme?.primary_color || '#10b981' }}>Atual</Badge>}
-                            </div>
-                          </div>
-                          {exp.location && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1"><MapPin className="w-3 h-3" />{exp.location}</p>}
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-muted-foreground mb-4">{exp.description}</p>
-                          {exp.technologies && exp.technologies.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {exp.technologies.map((tech) => <Badge key={tech} variant="outline">{tech}</Badge>)}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
+                          </CardHeader>
+                          
+                          <AnimatePresence initial={false}>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                              >
+                                <CardContent className="pt-0 border-t border-border/50">
+                                  <div className="pt-4">
+                                    <p className="text-muted-foreground leading-relaxed">{exp.description}</p>
+                                    {exp.technologies && exp.technologies.length > 0 && (
+                                      <div className="flex flex-wrap gap-2 mt-4">
+                                        {exp.technologies.map((tech) => (
+                                          <Badge 
+                                            key={tech} 
+                                            variant="outline"
+                                            style={{ borderColor: theme?.primary_color ? `${theme.primary_color}40` : undefined }}
+                                          >
+                                            {tech}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </Card>
+                      </motion.div>
+                    )
+                  })}
                 </div>
               ) : (
                 <Card className="bg-muted/50">
