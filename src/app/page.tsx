@@ -12,12 +12,14 @@ import {
   Briefcase, GraduationCap, Heart, MapPin, Calendar,
   Building2, School, Clock, Home as HomeIcon, FolderKanban,
   Wrench, Phone, Menu, X, Sparkles, BookOpen, Image as ImageIcon,
-  MessageSquare, ChevronUp, CheckCircle, ChevronDown, ChevronRight
+  MessageSquare, ChevronUp, CheckCircle, ChevronDown, ChevronRight,
+  Sun, Moon
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useRef } from "react"
 import ParticleBackground from "@/components/particle-background"
 import { ThemeToggle } from "@/components/theme/theme-provider"
+import { useColorMode, getActiveColors } from "@/hooks/use-color-mode"
 import { 
   getProjects, getSkills, getProfile, getHero, 
   getContacts, getExperiences, getEducation, sendMessage, getActiveTheme,
@@ -92,9 +94,12 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(true)
   const [showScrollTop, setShowScrollTop] = useState(false)
   
+  // Hook para detectar modo do sistema (claro/escuro)
+  const { colorMode, isDark, isLight } = useColorMode()
+  
   const [formulario, setFormulario] = useState({ nome: "", email: "", mensagem: "" })
   const [chatAberto, setChatAberto] = useState(false)
-  const [mensagens, setMensagens] = useState([{ autor: "bot" as const, texto: "Olá! Como posso ajudar?" }])
+  const [mensagens, setMensagens] = useState<Array<{ autor: 'bot' | 'usuario'; texto: string }>>([{ autor: "bot", texto: "Olá! Como posso ajudar?" }])
   const [inputChat, setInputChat] = useState("")
   const [carregando, setCarregando] = useState(false)
   const [formEnviado, setFormEnviado] = useState(false)
@@ -136,22 +141,33 @@ export default function PortfolioPage() {
     fetchData()
   }, [])
   
-  // Aplicar tema
+  // Aplicar tema responsivo baseado no modo do sistema
   useEffect(() => {
     if (theme) {
-      document.documentElement.style.setProperty('--primary', theme.primary_color)
-      document.documentElement.style.setProperty('--secondary', theme.secondary_color)
-      document.documentElement.style.setProperty('--accent', theme.accent_color)
-      document.documentElement.style.setProperty('--background', theme.background_color)
-      document.documentElement.style.setProperty('--foreground', theme.text_color)
-      if (theme.card_background) {
-        document.documentElement.style.setProperty('--card', theme.card_background)
+      // Obter cores ativas baseado no modo do sistema
+      const activeColors = getActiveColors(theme, colorMode)
+      
+      document.documentElement.style.setProperty('--primary', activeColors.primary_color)
+      document.documentElement.style.setProperty('--secondary', activeColors.secondary_color)
+      document.documentElement.style.setProperty('--accent', activeColors.accent_color)
+      document.documentElement.style.setProperty('--background', activeColors.background_color)
+      document.documentElement.style.setProperty('--foreground', activeColors.text_color)
+      
+      if (activeColors.card_background) {
+        document.documentElement.style.setProperty('--card', activeColors.card_background)
       }
-      if (theme.muted_color) {
-        document.documentElement.style.setProperty('--muted-foreground', theme.muted_color)
+      if (activeColors.muted_color) {
+        document.documentElement.style.setProperty('--muted-foreground', activeColors.muted_color)
       }
+      if (activeColors.border_color) {
+        document.documentElement.style.setProperty('--border', activeColors.border_color)
+      }
+      
+      // Adicionar classe ao body para estilos específicos do modo
+      document.body.classList.remove('dark-mode', 'light-mode')
+      document.body.classList.add(colorMode === 'dark' ? 'dark-mode' : 'light-mode')
     }
-  }, [theme])
+  }, [theme, colorMode])
   
   // Efeito de digitação
   useEffect(() => {
@@ -897,9 +913,6 @@ export default function PortfolioPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all"
-                              style={{ 
-                                ':hover': { backgroundColor: theme?.primary_color || undefined }
-                              }}
                             >
                               <IconComponent className="w-5 h-5" />
                             </a>

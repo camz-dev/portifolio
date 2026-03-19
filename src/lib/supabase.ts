@@ -112,12 +112,24 @@ export interface Theme {
   font_primary: string
   font_secondary: string
   border_radius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  // Theme mode
+  theme_mode?: 'dark' | 'light'
+  // Light mode colors (auto-generated from dark theme)
+  light_primary_color?: string
+  light_secondary_color?: string
+  light_accent_color?: string
+  light_background_color?: string
+  light_card_background?: string
+  light_text_color?: string
+  light_muted_color?: string
+  light_border_color?: string
   // Animation settings
   animation_type?: 'none' | 'fade' | 'slide' | 'scale' | 'bounce' | 'flip'
   animation_duration?: number
   animation_delay?: number
   hover_effect?: 'none' | 'scale' | 'lift' | 'glow' | 'shine'
   particle_effect?: boolean
+  particle_style?: string
   gradient_animation?: boolean
   cursor_effect?: 'none' | 'trail' | 'sparkle' | 'bubble'
   active: boolean
