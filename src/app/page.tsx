@@ -18,6 +18,13 @@ import {
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect, useRef } from "react"
 import ParticleBackground from "@/components/particle-background"
+import { 
+  CursorGlow, 
+  NoiseTexture, 
+  GeometricShapes,
+  ScrollReveal,
+  Counter 
+} from "@/components/dynamic-elements"
 import { ThemeToggle } from "@/components/theme/theme-provider"
 import { useColorMode, getActiveColors } from "@/hooks/use-color-mode"
 import { 
@@ -296,7 +303,26 @@ export default function PortfolioPage() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <ParticleBackground quantidade={theme?.particle_effect === false ? 0 : 30} />
+      {/* Dynamic Elements */}
+      <CursorGlow 
+        color={theme?.primary_color || '#10b981'} 
+        enabled={theme?.cursor_effect === 'glow'} 
+      />
+      <NoiseTexture 
+        enabled={theme?.noise_texture} 
+        opacity={0.03} 
+      />
+      <GeometricShapes 
+        enabled={theme?.particle_style === 'geometric'} 
+        color={theme?.primary_color || '#10b981'} 
+      />
+      
+      <ParticleBackground 
+        quantidade={theme?.particle_effect === false ? 0 : 30}
+        style={theme?.particle_style || 'floating'}
+        color={theme?.primary_color || '#10b981'}
+        enabled={theme?.particle_effect !== false}
+      />
       
       {/* Header Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-background via-background/95 to-transparent">
@@ -474,15 +500,33 @@ export default function PortfolioPage() {
             {/* Quick Stats */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="grid grid-cols-3 gap-6 mt-12 max-w-lg mx-auto">
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{profile?.years_experience || '2'}+</p>
+                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>
+                  <Counter 
+                    value={profile?.years_experience || 2} 
+                    suffix="+" 
+                    enabled={theme?.counter_animation}
+                  />
+                </p>
                 <p className="text-sm text-muted-foreground">Anos Estudando</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{projects?.length || 10}+</p>
+                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>
+                  <Counter 
+                    value={projects?.length || 10} 
+                    suffix="+" 
+                    enabled={theme?.counter_animation}
+                  />
+                </p>
                 <p className="text-sm text-muted-foreground">Projetos</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>{skills?.length || 6}+</p>
+                <p className="text-3xl font-bold text-primary" style={{ color: theme?.primary_color || undefined }}>
+                  <Counter 
+                    value={skills?.length || 6} 
+                    suffix="+" 
+                    enabled={theme?.counter_animation}
+                  />
+                </p>
                 <p className="text-sm text-muted-foreground">Tecnologias</p>
               </div>
             </motion.div>

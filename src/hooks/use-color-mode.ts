@@ -96,6 +96,9 @@ export function getActiveColors(
     text_color: string
     muted_color?: string
     border_color?: string
+    font_primary?: string
+    font_secondary?: string
+    border_radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
     light_primary_color?: string
     light_secondary_color?: string
     light_accent_color?: string
@@ -104,6 +107,17 @@ export function getActiveColors(
     light_text_color?: string
     light_muted_color?: string
     light_border_color?: string
+    light_font_primary?: string
+    light_font_secondary?: string
+    // Dynamic Elements
+    scroll_reveal_animation?: boolean
+    counter_animation?: boolean
+    timeline_glow_points?: boolean
+    noise_texture?: boolean
+    particle_effect?: boolean
+    particle_style?: string
+    cursor_effect?: string
+    gradient_animation?: boolean
   },
   colorMode: ColorMode
 ) {
@@ -119,6 +133,18 @@ export function getActiveColors(
       text_color: theme.light_text_color || '#0f172a',
       muted_color: theme.light_muted_color || '#64748b',
       border_color: theme.light_border_color || '#e2e8f0',
+      font_primary: theme.font_primary || 'Inter',
+      font_secondary: theme.font_secondary || 'Fira Code',
+      border_radius: theme.border_radius || 'md',
+      // Dynamic Elements - pass through
+      scroll_reveal_animation: theme.scroll_reveal_animation,
+      counter_animation: theme.counter_animation,
+      timeline_glow_points: theme.timeline_glow_points,
+      noise_texture: theme.noise_texture,
+      particle_effect: theme.particle_effect,
+      particle_style: theme.particle_style,
+      cursor_effect: theme.cursor_effect,
+      gradient_animation: theme.gradient_animation,
     }
   }
 
@@ -132,5 +158,17 @@ export function getActiveColors(
     text_color: theme.text_color,
     muted_color: theme.muted_color,
     border_color: theme.border_color,
+    font_primary: theme.font_primary || 'Inter',
+    font_secondary: theme.font_secondary || 'Fira Code',
+    border_radius: theme.border_radius || 'md',
+    // Dynamic Elements - pass through
+    scroll_reveal_animation: theme.scroll_reveal_animation,
+    counter_animation: theme.counter_animation,
+    timeline_glow_points: theme.timeline_glow_points,
+    noise_texture: theme.noise_texture,
+    particle_effect: theme.particle_effect,
+    particle_style: theme.particle_style,
+    cursor_effect: theme.cursor_effect,
+    gradient_animation: theme.gradient_animation,
   }
 }
