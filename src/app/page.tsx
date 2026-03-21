@@ -803,7 +803,7 @@ export default function PortfolioPage() {
                 Meus Projetos
               </h2>
               
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projects.map((projeto, index) => (
                   <motion.div key={projeto.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}>
                     <Card className="h-full hover:shadow-lg transition-all group overflow-hidden" style={{ borderRadius: getThemeBorderRadius() }}>
