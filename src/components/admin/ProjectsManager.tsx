@@ -201,7 +201,7 @@ export function ProjectsManager() {
       </div>
 
       {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.map((project) => (
           <Card key={project.id} className="bg-slate-800/50 border-slate-700 overflow-hidden">
             {project.image_url ? (
