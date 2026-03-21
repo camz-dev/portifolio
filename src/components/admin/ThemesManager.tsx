@@ -27,7 +27,7 @@ import {
   Plus, Pencil, Trash2, Palette, Check, Sun, Moon, Sparkles,
   Waves, Trees, Sunset, Zap, Heart, Globe, Monitor, Copy,
   MousePointer, Move, Layers, Cloud, Star, Circle, Hexagon,
-  Snowflake, Flame, Droplets, Wind
+  Snowflake, Flame, Droplets, Wind, Box, Eye, Hash, Timer
 } from 'lucide-react'
 import type { Theme, ThemeInput } from '@/types/portfolio'
 
@@ -307,6 +307,39 @@ const themePresets = [
   
   // ===== TEMAS CLAROS =====
   {
+    name: 'Creator Utility',
+    icon: Monitor,
+    mode: 'light' as const,
+    colors: {
+      primary_color: '#00FF88',
+      secondary_color: '#1A1A1A',
+      accent_color: '#00CC6A',
+      background_color: '#F7F7F5',
+      card_background: '#FFFFFF',
+      text_color: '#1A1A1A',
+      muted_color: '#666666',
+      border_color: '#E0E0E0',
+    },
+    font_primary: 'JetBrains Mono',
+    font_secondary: 'Inter',
+    border_radius: 'md' as const,
+    animations: {
+      animation_type: 'fade' as const,
+      animation_duration: 300,
+      hover_effect: 'lift' as const,
+      particle_effect: true,
+      particle_style: 'geometric' as const,
+      gradient_animation: false,
+      cursor_effect: 'glow' as const,
+    },
+    dynamic_elements: {
+      scroll_reveal_animation: true,
+      counter_animation: true,
+      timeline_glow_points: true,
+      noise_texture: true,
+    },
+  },
+  {
     name: 'Light Clean',
     icon: Sun,
     mode: 'light' as const,
@@ -486,6 +519,7 @@ const cursorEffectOptions = [
   { value: 'trail', label: 'Rastro' },
   { value: 'sparkle', label: 'Brilho' },
   { value: 'bubble', label: 'Bolhas' },
+  { value: 'glow', label: 'Brilho no Cursor' },
 ]
 
 const particleStyleOptions = [
@@ -499,6 +533,7 @@ const particleStyleOptions = [
   { value: 'hearts', label: 'Corações', icon: Heart, description: 'Corações flutuantes' },
   { value: 'aurora', label: 'Aurora', icon: Waves, description: 'Ondas de luz' },
   { value: 'matrix', label: 'Matrix', icon: Hexagon, description: 'Estilo código matrix' },
+  { value: 'geometric', label: 'Geométricas', icon: Box, description: 'Formas geométricas flutuantes com parallax' },
 ]
 
 const defaultTheme: ThemeInput = {
@@ -532,6 +567,11 @@ const defaultTheme: ThemeInput = {
   gradient_animation: false,
   cursor_effect: 'none',
   theme_mode: 'dark',
+  // Dynamic Elements
+  scroll_reveal_animation: false,
+  counter_animation: false,
+  timeline_glow_points: false,
+  noise_texture: false,
   active: false,
 }
 
@@ -585,6 +625,11 @@ export function ThemesManager() {
         gradient_animation: theme.gradient_animation ?? false,
         cursor_effect: theme.cursor_effect || 'none',
         theme_mode: theme.theme_mode || 'dark',
+        // Dynamic Elements
+        scroll_reveal_animation: theme.scroll_reveal_animation ?? false,
+        counter_animation: theme.counter_animation ?? false,
+        timeline_glow_points: theme.timeline_glow_points ?? false,
+        noise_texture: theme.noise_texture ?? false,
         active: theme.active,
       })
       setActiveTab('custom')
@@ -612,6 +657,11 @@ export function ThemesManager() {
       border_radius: preset.border_radius,
       ...preset.animations,
       theme_mode: preset.mode,
+      // Dynamic Elements
+      scroll_reveal_animation: (preset as any).dynamic_elements?.scroll_reveal_animation ?? false,
+      counter_animation: (preset as any).dynamic_elements?.counter_animation ?? false,
+      timeline_glow_points: (preset as any).dynamic_elements?.timeline_glow_points ?? false,
+      noise_texture: (preset as any).dynamic_elements?.noise_texture ?? false,
     })
     setActiveTab('custom')
   }
@@ -1469,6 +1519,91 @@ export function ThemesManager() {
                     <p className="text-xs text-slate-500">
                       Efeitos visuais que seguem o movimento do mouse
                     </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Elementos Dinâmicos */}
+              <div className="space-y-4">
+                <h4 className="text-slate-300 font-medium flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  Elementos Dinâmicos
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Efeito de Brilho no Cursor */}
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <MousePointer className="w-4 h-4 text-emerald-400" />
+                      <div>
+                        <Label className="text-slate-300">Brilho no Cursor</Label>
+                        <p className="text-xs text-slate-500">Um brilho sutil segue o mouse</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.cursor_effect === 'glow'}
+                      onCheckedChange={(checked) => setFormData({ ...formData, cursor_effect: checked ? 'glow' : 'none' })}
+                    />
+                  </div>
+
+                  {/* Animação de Revelação ao Rolar */}
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Eye className="w-4 h-4 text-emerald-400" />
+                      <div>
+                        <Label className="text-slate-300">Revelação ao Rolar</Label>
+                        <p className="text-xs text-slate-500">Itens aparecem gradualmente ao rolar</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.scroll_reveal_animation}
+                      onCheckedChange={(checked) => setFormData({ ...formData, scroll_reveal_animation: checked })}
+                    />
+                  </div>
+
+                  {/* Animação de Contador */}
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Timer className="w-4 h-4 text-emerald-400" />
+                      <div>
+                        <Label className="text-slate-300">Animação de Contador</Label>
+                        <p className="text-xs text-slate-500">Números aumentam quando visíveis</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.counter_animation}
+                      onCheckedChange={(checked) => setFormData({ ...formData, counter_animation: checked })}
+                    />
+                  </div>
+
+                  {/* Pontos Interativos da Linha do Tempo */}
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                      <div>
+                        <Label className="text-slate-300">Pontos da Timeline</Label>
+                        <p className="text-xs text-slate-500">Efeito de brilho ao passar o mouse</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.timeline_glow_points}
+                      onCheckedChange={(checked) => setFormData({ ...formData, timeline_glow_points: checked })}
+                    />
+                  </div>
+
+                  {/* Textura de Ruído */}
+                  <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg md:col-span-2">
+                    <div className="flex items-center gap-3">
+                      <Hash className="w-4 h-4 text-emerald-400" />
+                      <div>
+                        <Label className="text-slate-300">Textura de Ruído</Label>
+                        <p className="text-xs text-slate-500">Sobreposição sutil para estética utilitária de criador</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.noise_texture}
+                      onCheckedChange={(checked) => setFormData({ ...formData, noise_texture: checked })}
+                    />
                   </div>
                 </div>
               </div>

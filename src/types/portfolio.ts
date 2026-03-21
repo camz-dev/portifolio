@@ -231,9 +231,14 @@ export interface Theme {
   hover_effect?: 'none' | 'scale' | 'lift' | 'glow' | 'shine'
   // Particle effects
   particle_effect?: boolean
-  particle_style?: 'floating' | 'stars' | 'bubbles' | 'glow' | 'sparkle' | 'fire' | 'snow' | 'hearts' | 'aurora' | 'matrix'
+  particle_style?: 'floating' | 'stars' | 'bubbles' | 'glow' | 'sparkle' | 'fire' | 'snow' | 'hearts' | 'aurora' | 'matrix' | 'geometric'
   gradient_animation?: boolean
-  cursor_effect?: 'none' | 'trail' | 'sparkle' | 'bubble'
+  cursor_effect?: 'none' | 'trail' | 'sparkle' | 'bubble' | 'glow'
+  // Dynamic Elements
+  scroll_reveal_animation?: boolean
+  counter_animation?: boolean
+  timeline_glow_points?: boolean
+  noise_texture?: boolean
   active: boolean
   created_at: string
   updated_at: string
@@ -270,9 +275,14 @@ export interface ThemeInput {
   hover_effect?: 'none' | 'scale' | 'lift' | 'glow' | 'shine'
   // Particle effects
   particle_effect?: boolean
-  particle_style?: 'floating' | 'stars' | 'bubbles' | 'glow' | 'sparkle' | 'fire' | 'snow' | 'hearts' | 'aurora' | 'matrix'
+  particle_style?: 'floating' | 'stars' | 'bubbles' | 'glow' | 'sparkle' | 'fire' | 'snow' | 'hearts' | 'aurora' | 'matrix' | 'geometric'
   gradient_animation?: boolean
-  cursor_effect?: 'none' | 'trail' | 'sparkle' | 'bubble'
+  cursor_effect?: 'none' | 'trail' | 'sparkle' | 'bubble' | 'glow'
+  // Dynamic Elements
+  scroll_reveal_animation?: boolean
+  counter_animation?: boolean
+  timeline_glow_points?: boolean
+  noise_texture?: boolean
   active: boolean
 }
 
