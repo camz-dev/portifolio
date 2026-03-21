@@ -62,7 +62,7 @@ src/
     └── utils.ts              # Utilitários
 ```
 
-## 🤖 Sobre o Chatbot
+## 🤖 Sobre o Chatbot -- Ainda não estruturado --
 
 O chatbot usa IA para responder perguntas sobre Camile:
 - Projetos
