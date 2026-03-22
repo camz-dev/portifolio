@@ -306,7 +306,8 @@ export default function PortfolioPage() {
       {/* Dynamic Elements */}
       <CursorGlow 
         color={theme?.primary_color || '#10b981'} 
-        enabled={theme?.cursor_effect === 'glow'} 
+        enabled={theme?.cursor_effect && theme.cursor_effect !== 'none'} 
+        style={theme?.cursor_effect || 'glow'}
       />
       <NoiseTexture 
         enabled={theme?.noise_texture} 

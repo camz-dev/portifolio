@@ -203,14 +203,12 @@ export default function ParticleBackground({
       const scrollY = window.scrollY
       const height = window.innerHeight
       
-      const novaOpacidade = Math.max(0, 1 - (scrollY / (height * 0.3)))
+      // Reduzir opacidade levemente ao rolar, mas nunca desaparecer completamente
+      const novaOpacidade = Math.max(0.4, 1 - (scrollY / (height * 1.5)))
       setOpacidade(novaOpacidade)
       
-      if (scrollY > height * 0.5) {
-        setVisivel(false)
-      } else {
-        setVisivel(true)
-      }
+      // Partículas sempre visíveis
+      setVisivel(true)
     }
 
     window.addEventListener('scroll', handleScroll)

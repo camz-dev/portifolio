@@ -4,34 +4,132 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useInView, useSpring, useTransform } from 'framer-motion'
 
 // ===== CURSOR GLOW EFFECT =====
-export function CursorGlow({ color = '#00FF88', enabled = false }: { color?: string; enabled?: boolean }) {
+interface CursorGlowProps {
+  color?: string
+  enabled?: boolean
+  style?: 'none' | 'trail' | 'sparkle' | 'bubble' | 'glow'
+}
+
+export function CursorGlow({ color = '#00FF88', enabled = false, style = 'glow' }: CursorGlowProps) {
   const cursorRef = useRef<HTMLDivElement>(null)
+  const [trail, setTrail] = useState<Array<{ x: number; y: number; id: number }>>([])
+  const [sparkles, setSparkles] = useState<Array<{ x: number; y: number; id: number }>>([])
+  const [bubbles, setBubbles] = useState<Array<{ x: number; y: number; id: number; size: number }>>([])
 
   useEffect(() => {
     if (!enabled) return
+
+    let idCounter = 0
 
     const handleMouseMove = (e: MouseEvent) => {
       if (cursorRef.current) {
         cursorRef.current.style.left = `${e.clientX}px`
         cursorRef.current.style.top = `${e.clientY}px`
       }
+
+      // Trail effect
+      if (style === 'trail') {
+        setTrail(prev => {
+          const newTrail = [...prev, { x: e.clientX, y: e.clientY, id: idCounter++ }]
+          return newTrail.slice(-20)
+        })
+      }
+
+      // Sparkle effect
+      if (style === 'sparkle' && Math.random() > 0.7) {
+        const sparkle = { x: e.clientX + (Math.random() - 0.5) * 30, y: e.clientY + (Math.random() - 0.5) * 30, id: idCounter++ }
+        setSparkles(prev => [...prev, sparkle])
+        setTimeout(() => {
+          setSparkles(prev => prev.filter(s => s.id !== sparkle.id))
+        }, 500)
+      }
+
+      // Bubble effect
+      if (style === 'bubble' && Math.random() > 0.8) {
+        const bubble = { x: e.clientX + (Math.random() - 0.5) * 40, y: e.clientY + (Math.random() - 0.5) * 40, id: idCounter++, size: 5 + Math.random() * 10 }
+        setBubbles(prev => [...prev, bubble])
+        setTimeout(() => {
+          setBubbles(prev => prev.filter(b => b.id !== bubble.id))
+        }, 1000)
+      }
     }
 
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [enabled])
+  }, [enabled, style])
 
   if (!enabled) return null
 
   return (
-    <div
-      ref={cursorRef}
-      className="fixed pointer-events-none z-50 w-64 h-64 -translate-x-1/2 -translate-y-1/2"
-      style={{
-        background: `radial-gradient(circle, ${color}40 0%, ${color}10 40%, transparent 70%)`,
-        filter: 'blur(20px)',
-      }}
-    />
+    <>
+      {/* Main cursor glow */}
+      <div
+        ref={cursorRef}
+        className="fixed pointer-events-none z-50 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          width: style === 'glow' ? '256px' : '128px',
+          height: style === 'glow' ? '256px' : '128px',
+          background: `radial-gradient(circle, ${color}40 0%, ${color}10 40%, transparent 70%)`,
+          filter: 'blur(20px)',
+        }}
+      />
+      
+      {/* Trail effect */}
+      {style === 'trail' && trail.map((point, i) => (
+        <div
+          key={point.id}
+          className="fixed pointer-events-none z-50 rounded-full"
+          style={{
+            left: point.x,
+            top: point.y,
+            width: 8 - (i * 0.3),
+            height: 8 - (i * 0.3),
+            backgroundColor: color,
+            opacity: 1 - (i * 0.05),
+            transform: 'translate(-50%, -50%)',
+            transition: 'opacity 0.3s ease-out',
+          }}
+        />
+      ))}
+      
+      {/* Sparkle effect */}
+      {style === 'sparkle' && sparkles.map(sparkle => (
+        <motion.div
+          key={sparkle.id}
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: sparkle.x,
+            top: sparkle.y,
+            width: 8,
+            height: 8,
+            backgroundColor: color,
+            clipPath: 'polygon(50% 0%, 55% 45%, 100% 50%, 55% 55%, 50% 100%, 45% 55%, 0% 50%, 45% 45%)',
+          }}
+          initial={{ opacity: 1, scale: 1 }}
+          animate={{ opacity: 0, scale: 0 }}
+          transition={{ duration: 0.5 }}
+        />
+      ))}
+      
+      {/* Bubble effect */}
+      {style === 'bubble' && bubbles.map(bubble => (
+        <motion.div
+          key={bubble.id}
+          className="fixed pointer-events-none z-50 rounded-full border"
+          style={{
+            left: bubble.x,
+            top: bubble.y,
+            width: bubble.size,
+            height: bubble.size,
+            borderColor: `${color}60`,
+            backgroundColor: `${color}20`,
+          }}
+          initial={{ opacity: 1, y: 0, scale: 0 }}
+          animate={{ opacity: 0, y: -50, scale: 1.5 }}
+          transition={{ duration: 1 }}
+        />
+      ))}
+    </>
   )
 }
 
@@ -83,17 +181,17 @@ interface CounterProps {
 export function Counter({ value, suffix = '', prefix = '', enabled = true, duration = 2 }: CounterProps) {
   const ref = useRef<HTMLSpanElement>(null)
   const isInView = useInView(ref, { once: true })
-  const [hasAnimated, setHasAnimated] = useState(false)
+  const hasAnimatedRef = useRef(false)
 
   const spring = useSpring(0, { duration: duration * 1000 })
   const display = useTransform(spring, (current) => Math.round(current))
 
   useEffect(() => {
-    if (isInView && enabled && !hasAnimated) {
+    if (isInView && enabled && !hasAnimatedRef.current) {
       spring.set(value)
-      setHasAnimated(true)
+      hasAnimatedRef.current = true
     }
-  }, [isInView, enabled, value, spring, hasAnimated])
+  }, [isInView, enabled, value, spring])
 
   if (!enabled) {
     return <span>{prefix}{value}{suffix}</span>
