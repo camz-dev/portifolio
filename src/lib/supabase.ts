@@ -267,12 +267,18 @@ export async function getContacts(): Promise<Contact[]> {
 
 export async function getExperiences(): Promise<Experience[]> {
   try {
+    console.log('[Frontend] Fetching experiences from Supabase...')
     const { data, error } = await supabase
       .from('experiences')
       .select('*')
       .order('order_index')
     
-    if (error) throw error
+    if (error) {
+      console.error('[Frontend] Supabase error:', error)
+      throw error
+    }
+    
+    console.log('[Frontend] Found', data?.length || 0, 'experiences')
     
     // Garantir que technologies seja sempre um array
     return (data || []).map(e => ({
@@ -280,7 +286,7 @@ export async function getExperiences(): Promise<Experience[]> {
       technologies: parseTechnologies(e.technologies)
     })) as Experience[]
   } catch (error) {
-    console.error('Erro ao buscar experiências:', error)
+    console.error('[Frontend] Erro ao buscar experiências:', error)
     return []
   }
 }
