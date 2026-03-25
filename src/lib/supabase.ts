@@ -113,7 +113,7 @@ export interface Theme {
   font_secondary?: string
   border_radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
   // Theme mode
-  theme_mode?: 'dark' | 'light'
+  theme_mode?: 'dark' | 'light' | 'system'
   // Light mode colors (auto-generated)
   light_primary_color?: string
   light_secondary_color?: string

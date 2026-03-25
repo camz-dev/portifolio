@@ -102,7 +102,8 @@ export default function PortfolioPage() {
   const [showScrollTop, setShowScrollTop] = useState(false)
   
   // Hook para detectar modo do sistema (claro/escuro)
-  const { colorMode, isDark, isLight } = useColorMode()
+  // Passa o theme_mode do banco de dados para respeitar a configuração do admin
+  const { colorMode, isDark, isLight } = useColorMode(theme?.theme_mode)
   
   const [formulario, setFormulario] = useState({ nome: "", email: "", mensagem: "" })
   const [chatAberto, setChatAberto] = useState(false)

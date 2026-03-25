@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 export type ColorMode = 'dark' | 'light'
+export type ThemeMode = 'dark' | 'light' | 'system'
 
 interface UseColorModeReturn {
   colorMode: ColorMode
@@ -15,12 +16,21 @@ interface UseColorModeReturn {
 /**
  * Hook para detectar e gerenciar o modo de cor do sistema
  * Detecta automaticamente quando o usuário muda o tema do sistema
+ * Respeita a configuração theme_mode do banco de dados:
+ * - 'system': segue a preferência do sistema
+ * - 'dark' ou 'light': usa o modo definido
  */
-export function useColorMode(): UseColorModeReturn {
+export function useColorMode(dbThemeMode?: ThemeMode): UseColorModeReturn {
   const [colorMode, setColorModeState] = useState<ColorMode>('dark')
 
   useEffect(() => {
-    // Detecta o modo inicial
+    // Se o admin definiu um modo específico, usar ele
+    if (dbThemeMode && dbThemeMode !== 'system') {
+      setColorModeState(dbThemeMode as ColorMode)
+      return
+    }
+
+    // Se theme_mode é 'system' ou não definido, detectar preferência do sistema
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const initialMode: ColorMode = mediaQuery.matches ? 'dark' : 'light'
     setColorModeState(initialMode)
@@ -38,7 +48,7 @@ export function useColorMode(): UseColorModeReturn {
     return () => {
       mediaQuery.removeEventListener('change', handleChange)
     }
-  }, [])
+  }, [dbThemeMode])
 
   const toggleColorMode = useCallback(() => {
     setColorModeState(prev => prev === 'dark' ? 'light' : 'dark')
